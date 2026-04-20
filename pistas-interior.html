@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>Pistas — Semana</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .dias-tabs{display:flex;gap:3px;padding:8px 11px 4px;flex-wrap:wrap}
+    .dia-tab{flex-shrink:0;min-width:42px;padding:6px 4px;border-radius:9px;border:1.5px solid var(--borde);background:var(--card);text-align:center;cursor:pointer;transition:all .15s}
+    .dia-tab.active{background:var(--azul);border-color:var(--azul)}
+    .dia-tab .dl{font-size:9px;font-weight:900;text-transform:uppercase;color:var(--sub)}
+    .dia-tab .dd{font-size:14px;font-weight:900;color:var(--texto)}
+    .dia-tab .dot{width:5px;height:5px;border-radius:50%;background:var(--naranja);margin:2px auto 0}
+    .dia-tab.active .dl,.dia-tab.active .dd{color:#fff}
+    .dia-tab.active .dot{background:#fff}
+    .pista-section{margin-bottom:10px}
+    .pista-header{display:flex;align-items:center;gap:7px;margin-bottom:6px;padding:0 2px}
+    .pista-nombre{font-size:12px;font-weight:900;color:var(--texto)}
+    .bloque-card{background:var(--card);border-radius:10px;margin-bottom:5px;border:1.5px solid var(--borde);position:relative;overflow:hidden}
+    .bloque-card:hover{border-color:#93c5fd}
+    .bloque-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:4px 0 0 4px}
+    .bc-azul::before{background:var(--azul)}.bc-verde::before{background:var(--verde)}
+    .bc-naranja::before{background:var(--naranja)}.bc-morado::before{background:var(--morado)}
+    .bc-rojo::before{background:var(--rojo)}.bc-gris::before{background:var(--sutil)}
+    .bloque-main{display:flex;align-items:center;gap:9px;padding:9px 11px 9px 15px;cursor:pointer}
+    .bloque-hora{font-size:11px;font-weight:900;color:var(--texto);min-width:60px;line-height:1.3}
+    .bloque-hora small{font-size:9px;font-weight:700;color:var(--sutil);display:block}
+    .bloque-info{flex:1;min-width:0}
+    .bloque-titulo{font-size:12px;font-weight:800;color:var(--texto)}
+    .bloque-sub{font-size:10px;color:var(--sutil);font-weight:600;margin-top:1px}
+    .bloque-chevron{font-size:14px;color:var(--sutil);transition:transform .2s;flex-shrink:0}
+    .bloque-expanded{display:none;border-top:1px solid var(--borde);padding:9px 11px 9px 15px;gap:7px;flex-direction:column}
+    .bloque-card.open .bloque-chevron{transform:rotate(90deg)}
+    .bloque-card.open .bloque-expanded{display:flex}
+    .bloque-btns{display:flex;gap:7px}
+    .btn-edit-bloque{flex:1;padding:8px;background:#eff6ff;border:1.5px solid #93c5fd;border-radius:8px;font-family:Nunito,sans-serif;font-size:11px;font-weight:800;color:var(--azul);cursor:pointer}
+    .btn-del-bloque{flex:1;padding:8px;background:#fee2e2;border:1.5px solid #fca5a5;border-radius:8px;font-family:Nunito,sans-serif;font-size:11px;font-weight:800;color:#dc2626;cursor:pointer}
+    .add-bloque{background:#f8fafc;border:1.5px dashed #cbd5e1;border-radius:10px;padding:9px;display:flex;align-items:center;justify-content:center;gap:5px;cursor:pointer;font-size:11px;font-weight:800;color:var(--sutil);margin-bottom:5px}
+    .add-bloque:hover{border-color:var(--azul);color:var(--azul);background:#eff6ff}
+    .tipo-color-azul{background:#eff6ff;color:var(--azul)}.tipo-color-verde{background:#f0fdf4;color:var(--verde)}
+    .tipo-color-naranja{background:#fffbeb;color:#d97706}.tipo-color-morado{background:#f3e8ff;color:var(--morado)}
+      .nuevo-inline{display:flex;gap:6px;align-items:center;margin:0}
+    .nuevo-inline .finp{flex:1}
+    .nuevo-inline .sbtn{padding:9px 12px;min-width:0;flex-shrink:0}
+
+    /* ── Pestañas Semana / Pista 1 / Pista 2... ── */
+    .pistas-tabs{display:flex;background:var(--card);border-bottom:2px solid var(--borde);flex-wrap:wrap;flex-shrink:0}
+    .pistas-tabs::-webkit-scrollbar{display:none}
+    .ptab-btn{padding:8px 14px;font-size:12px;font-weight:800;color:var(--sutil);border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap;font-family:Nunito,sans-serif;flex-shrink:0}
+    .ptab-btn.active{color:var(--azul);border-bottom-color:var(--azul)}
+    .ptab-panel{display:none;flex:1;flex-direction:column;min-height:0;overflow:hidden}
+    .ptab-panel.active{display:flex}
+
+    /* ── Calendario por pista ── */
+    .cal-wrap{flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+    .cal-head{display:flex;background:var(--card);border-bottom:2px solid var(--borde);flex-shrink:0}
+    .cal-head-spc{width:34px;flex-shrink:0;border-right:1px solid var(--borde)}
+    .cal-head-days{flex:1;display:grid;grid-template-columns:repeat(7,1fr)}
+    .cal-hd{padding:5px 2px;text-align:center;border-right:1px solid var(--borde);font-size:9px;font-weight:900;color:var(--sub);line-height:1.4}
+    .cal-hd:last-child{border-right:none}
+    .cal-hd .hdn{font-size:12px;font-weight:900;color:var(--texto);display:block}
+    .cal-hd.hoy .hdn{color:var(--azul)}
+    .cal-grid{flex:1;display:flex;min-height:0}
+    .cal-tcol{width:34px;flex-shrink:0;border-right:1px solid var(--borde);background:var(--card);display:flex;flex-direction:column}
+    .cal-tlbl{display:flex;align-items:flex-start;justify-content:flex-end;padding-right:4px;padding-top:1px;border-bottom:1px solid var(--borde);font-size:8px;font-weight:700;color:var(--sutil)}
+    .cal-dcols{flex:1;display:grid;grid-template-columns:repeat(7,1fr);position:relative}
+    .cal-dcol{position:relative;border-right:1px solid var(--borde)}
+    .cal-dcol:last-child{border-right:none}
+    .cal-hrow{border-bottom:1px solid var(--borde)}
+    .cal-ev{position:absolute;left:1px;right:1px;border-radius:3px;overflow:hidden;cursor:pointer;padding:1px 3px;z-index:2}
+    .cal-ev:active{filter:brightness(.92)}
+    .cal-ev .ev-t{font-size:7.5px;font-weight:900;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .cal-ev .ev-s{font-size:7px;font-weight:700;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    /* popup info cal */
+    .cal-popup-overlay{position:fixed;inset:0;background:rgba(15,23,42,.4);z-index:600;display:flex;align-items:flex-end}
+    .cal-popup-sheet{background:var(--card);border-radius:20px 20px 0 0;padding:6px 16px 28px;width:100%;max-width:480px;margin:0 auto}
+    .cal-popup-handle{width:36px;height:4px;background:var(--borde);border-radius:2px;margin:10px auto 14px}
+    .cal-popup-badge{display:inline-flex;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:900;margin-bottom:10px}
+    .cal-popup-title{font-size:17px;font-weight:900;color:var(--texto);margin-bottom:2px}
+    .cal-popup-sub{font-size:12px;color:var(--sutil);font-weight:700;margin-bottom:14px}
+    .cal-popup-row{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid #f1f5f9}
+    .cal-popup-row:last-of-type{border-bottom:none}
+    .cal-popup-lbl{font-size:10px;font-weight:900;color:var(--sutil);text-transform:uppercase;min-width:58px}
+    .cal-popup-val{font-size:12px;font-weight:700;color:var(--texto);flex:1}
+    .cal-popup-close{width:100%;margin-top:14px;padding:12px;background:#f1f5f9;border:none;border-radius:12px;font-family:Nunito,sans-serif;font-size:13px;font-weight:900;color:var(--sub);cursor:pointer}
+  </style>
+</head>
+<body>
+<div class="page">
+  <div id="header-container"></div>
+  <nav id="nav-container"></nav>
+  <div class="sep"></div>
+
+  <!-- Pestañas Semana / Pista 1 / Pista 2... -->
+  <div class="pistas-tabs" id="pistas-tabs"></div>
+
+  <!-- Panel Semana (vista actual) -->
+  <div class="ptab-panel active" id="ptab-semana" style="flex-direction:column">
+    <div class="dias-tabs" id="dias-tabs"></div>
+    <main class="content" style="padding-top:8px;flex:1;overflow-y:auto" id="main-pistas">
+      <div class="loading"><div class="spinner"></div></div>
+    </main>
+  </div>
+
+  <!-- Paneles de calendario por pista (generados por JS) -->
+  <div id="ptab-cals"></div>
+
+  <!-- Sheet nuevo bloque -->
+  <div class="overlay" id="sh-bloque">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title" id="sh-bloque-titulo">Nuevo bloque</div>
+      <input type="hidden" id="bl-id">
+      <input type="hidden" id="bl-pista">
+      <div class="frow">
+        <div class="fgrp">
+          <div class="flbl">Hora inicio</div>
+          <input class="finp" id="bl-inicio" type="time" value="09:00">
+        </div>
+        <div class="fgrp">
+          <div class="flbl">Hora fin</div>
+          <input class="finp" id="bl-fin" type="time" value="10:30">
+        </div>
+      </div>
+      <div class="fgrp">
+        <div class="flbl">Tipo</div>
+        <div class="fsel-wrap"><select class="fsel" id="bl-tipo" onchange="onSelectNuevoTipo(this)"></select></div>
+        <div class="nuevo-inline" id="nuevo-tipo-wrap" style="display:none;margin-top:4px">
+          <input class="finp" id="nuevo-tipo-inp" placeholder="Ej: Entrenamiento"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();confirmarNuevoTipo();}">
+          <button class="sbtn prim" type="button" onclick="confirmarNuevoTipo()">✓</button>
+          <button class="sbtn" type="button" onclick="cancelarNuevoTipo()">✕</button>
+        </div>
+      </div>
+      <div class="fgrp">
+        <div class="flbl">Grupo</div>
+        <div class="fsel-wrap"><select class="fsel" id="bl-grupo"><option value="">Sin grupo / libre</option></select></div>
+      </div>
+      <div class="fgrp">
+        <div class="flbl">Monitor</div>
+        <div class="fsel-wrap"><select class="fsel" id="bl-monitor" onchange="onSelectNuevoMonitor(this)"></select></div>
+        <div class="nuevo-inline" id="nuevo-monitor-wrap" style="display:none;margin-top:4px">
+          <input class="finp" id="nuevo-monitor-inp" placeholder="Nombre monitor"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();confirmarNuevoMonitor();}">
+          <button class="sbtn prim" type="button" onclick="confirmarNuevoMonitor()">✓</button>
+          <button class="sbtn" type="button" onclick="cancelarNuevoMonitor()">✕</button>
+        </div>
+      </div>
+      <div class="fgrp">
+        <div class="flbl">Actividad (texto libre)</div>
+        <input class="finp" id="bl-actividad" placeholder="Ej: Clase Grupo A, Torneo...">
+      </div>
+      <div class="fgrp">
+        <div class="flbl">Color del bloque</div>
+        <div style="display:flex;gap:8px;margin-top:4px" id="color-picker">
+          <div data-color="azul"    style="width:28px;height:28px;border-radius:8px;background:#2563eb;cursor:pointer;border:3px solid #2563eb"    onclick="selColor(this)"></div>
+          <div data-color="verde"   style="width:28px;height:28px;border-radius:8px;background:#16a34a;cursor:pointer;border:3px solid transparent" onclick="selColor(this)"></div>
+          <div data-color="naranja" style="width:28px;height:28px;border-radius:8px;background:#f59e0b;cursor:pointer;border:3px solid transparent" onclick="selColor(this)"></div>
+          <div data-color="rojo"    style="width:28px;height:28px;border-radius:8px;background:#e05a5a;cursor:pointer;border:3px solid transparent" onclick="selColor(this)"></div>
+          <div data-color="morado"  style="width:28px;height:28px;border-radius:8px;background:#7c3aed;cursor:pointer;border:3px solid transparent" onclick="selColor(this)"></div>
+          <div data-color="gris"    style="width:28px;height:28px;border-radius:8px;background:#64748b;cursor:pointer;border:3px solid transparent" onclick="selColor(this)"></div>
+        </div>
+        <input type="hidden" id="bl-color" value="azul">
+      </div>
+      <div class="sheet-btns">
+        <button class="sbtn" onclick="closeSheet('sh-bloque')">Cancelar</button>
+        <button class="sbtn prim" onclick="guardarBloque()">✓ Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="confirm-overlay" id="confirm-overlay">
+    <div class="confirm-box">
+      <div class="confirm-titulo">¿Eliminar bloque?</div>
+      <div class="confirm-texto">Esta acción no se puede deshacer.</div>
+      <div class="confirm-btns">
+        <button class="cbtn" onclick="document.getElementById('confirm-overlay').classList.remove('open')">Cancelar</button>
+        <button class="cbtn danger" id="confirm-ok">Eliminar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/store.js"></script>
+<script src="js/ui.js"></script>
+<script>
+const params   = new URLSearchParams(location.search);
+const semanaId = params.get('id');
+let _semana         = null;
+let _diaActivo      = 0;
+let _grupos         = [];
+let _cfgTiposBloq   = ['Clase','Torneo','Particular','Libre'];
+let _cfgMonitores   = [];
+
+const DIAS_L  = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+const DIAS_C  = ['LUN','MAR','MIÉ','JUE','VIE','SÁB','DOM'];
+const TIPO_C  = { Clase:'azul', Torneo:'verde', Particular:'naranja', Libre:'gris' };
+
+function fechaDia(i) {
+  const d = new Date(_semana.fecha_inicio);
+  d.setDate(d.getDate()+i);
+  return d;
+}
+
+function bloquesDelDia(dia) {
+  const fecha = fechaDia(dia);
+  const nombresDia = DIAS_L[dia].toLowerCase();
+  return (_semana.bloques_pista||[])
+    .filter(b => b.dia === nombresDia || b.dia === dia)
+    .sort((a,b) => (a.hora_inicio||'').localeCompare(b.hora_inicio||''));
+}
+
+function renderTabs() {
+  const el = document.getElementById('dias-tabs');
+  el.innerHTML = DIAS_C.map((d,i) => {
+    const bloques = (_semana.bloques_pista||[]).filter(b=>Number(b.dia)===i);
+    const dot = bloques.length ? '<div class="dot"></div>' : '';
+    const fecha = fechaDia(i);
+    return `<div class="dia-tab ${_diaActivo===i?'active':''}" onclick="selDia(${i})">
+      <div class="dl">${d}</div>
+      <div class="dd">${fecha.getDate()}</div>
+      ${dot}
+    </div>`;
+  }).join('');
+}
+
+function renderPistas() {
+  const el = document.getElementById('main-pistas');
+  const np = _semana.num_pistas || 3;
+  let html = '';
+  for (let p=1; p<=np; p++) {
+    const nombre = `Pista ${p}`;
+    const bloques = (_semana.bloques_pista||[])
+      .filter(b => b.pista===nombre && Number(b.dia)===_diaActivo)
+      .sort((a,b)=>(a.hora_inicio||'').localeCompare(b.hora_inicio||''));
+    const color = ['azul','verde','naranja','morado'][p-1]||'gris';
+    const bloquesHTML = bloques.map(b => {
+      const grupo = _grupos.find(g=>g.id===b.grupo_id);
+      const titulo = grupo ? grupo.nombre : (b.actividad || b.tipo);
+      const monitor = b.monitor ? ` · 👤 ${b.monitor}` : '';
+      const sub = `${b.hora_inicio?.slice(0,5)||''}–${b.hora_fin?.slice(0,5)||''}${monitor}`;
+      const bEnc = encodeURIComponent(JSON.stringify(b));
+      return `<div class="bloque-card bc-${b.color||color}" id="bc-${b.id}">
+        <div class="bloque-main" onclick="toggleBloqueExp('${b.id}')">
+          <div class="bloque-hora">${b.hora_inicio?.slice(0,5)||'—'}<small>${b.hora_fin?.slice(0,5)||''}</small></div>
+          <div class="bloque-info">
+            <div class="bloque-titulo">${titulo}</div>
+            <div class="bloque-sub">${sub}</div>
+          </div>
+          <span class="bloque-chevron">›</span>
+        </div>
+        <div class="bloque-expanded">
+          ${b.tipo||b.actividad ? `<div style="font-size:10px;color:var(--sutil);font-weight:700">${b.tipo||''}${b.actividad?' · '+b.actividad:''}</div>` : ''}
+          <div class="bloque-btns">
+            <button class="btn-edit-bloque" onclick="editarBloqueEnc('${bEnc}')">✏️ Editar</button>
+            <button class="btn-del-bloque" onclick="eliminarBloque('${b.id}')">🗑 Eliminar</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+    html += `<div class="pista-section">
+      <div class="pista-header">
+        <span class="pista-badge" style="background:var(--${color})">${nombre}</span>
+      </div>
+      ${bloquesHTML}
+      <div class="add-bloque" onclick="abrirNuevo('${nombre}')">+ Añadir bloque</div>
+    </div>`;
+  }
+  el.innerHTML = html || '<div class="empty-state">Sin bloques este día</div>';
+}
+
+function selDia(i) {
+  _diaActivo = i;
+  renderTabs();
+  renderPistas();
+}
+
+function selColor(el) {
+  document.querySelectorAll('#color-picker div').forEach(d => d.style.borderColor = 'transparent');
+  el.style.borderColor = el.style.background;
+  document.getElementById('bl-color').value = el.dataset.color;
+}
+
+function abrirNuevo(pista) {
+  document.getElementById('sh-bloque-titulo').textContent = `Nuevo bloque — ${pista}`;
+  document.getElementById('bl-id').value       = '';
+  document.getElementById('bl-pista').value    = pista;
+  document.getElementById('bl-inicio').value   = '09:00';
+  document.getElementById('bl-fin').value      = '10:30';
+  fillTipoSelect('Clase');
+  document.getElementById('bl-grupo').value    = '';
+  document.getElementById('bl-actividad').value= '';
+  fillMonitorSelect('');
+  document.getElementById('bl-color').value    = 'azul';
+  document.querySelectorAll('#color-picker div').forEach((d,i) => d.style.borderColor = i===0 ? d.style.background : 'transparent');
+  openSheet('sh-bloque');
+}
+
+function toggleBloqueExp(id) {
+  const card = document.getElementById('bc-'+id);
+  if (card) card.classList.toggle('open');
+}
+
+function editarBloqueEnc(enc) {
+  try { abrirEditar(JSON.parse(decodeURIComponent(enc))); } catch(e) { console.error(e); }
+}
+
+function abrirEditar(b) {
+  document.getElementById('sh-bloque-titulo').textContent = 'Editar bloque';
+  document.getElementById('bl-id').value        = b.id;
+  document.getElementById('bl-pista').value     = b.pista;
+  document.getElementById('bl-inicio').value    = b.hora_inicio?.slice(0,5)||'09:00';
+  document.getElementById('bl-fin').value       = b.hora_fin?.slice(0,5)||'10:30';
+  fillTipoSelect(b.tipo||'Clase');
+  document.getElementById('bl-grupo').value     = b.grupo_id||'';
+  document.getElementById('bl-actividad').value = b.actividad||'';
+  fillMonitorSelect(b.monitor||'');
+  const c = b.color||'azul';
+  document.getElementById('bl-color').value = c;
+  document.querySelectorAll('#color-picker div').forEach(d => d.style.borderColor = d.dataset.color===c ? d.style.background : 'transparent');
+  openSheet('sh-bloque');
+}
+
+async function guardarBloque() {
+  const bloque = {
+    id:          document.getElementById('bl-id').value || undefined,
+    semana_id:   semanaId,
+    pista:       document.getElementById('bl-pista').value,
+    dia:         _diaActivo,
+    tipo:        document.getElementById('bl-tipo').value,
+    hora_inicio: document.getElementById('bl-inicio').value,
+    hora_fin:    document.getElementById('bl-fin').value,
+    grupo_id:    document.getElementById('bl-grupo').value || null,
+    actividad:   document.getElementById('bl-actividad').value.trim(),
+    monitor:     document.getElementById('bl-monitor').value || null,
+    color:       document.getElementById('bl-color').value || 'azul',
+  };
+  try {
+    await saveBloquePista(bloque);
+    closeSheet('sh-bloque');
+    toast('Bloque guardado','ok');
+    await recargar();
+  } catch(e) { toast('Error al guardar','err'); console.error(e); }
+}
+
+function eliminarBloque(id) {
+  document.getElementById('confirm-overlay').classList.add('open');
+  document.getElementById('confirm-ok').onclick = async () => {
+    document.getElementById('confirm-overlay').classList.remove('open');
+    try {
+      await _sb.from('bloques_pista').delete().eq('id',id);
+      toast('Bloque eliminado','ok');
+      await recargar();
+    } catch(e) { toast('Error','err'); }
+  };
+}
+
+async function recargar() {
+  const { data: sd } = await _sb.from('semanas_pista').select('*').eq('id', semanaId).single();
+  const { data: bd } = await _sb.from('bloques_pista').select('*').eq('semana_id', semanaId);
+  if (sd) { sd.bloques_pista = bd || []; _semana = sd; }
+  // Reset calendar cache so it rebuilds with fresh data
+  Object.keys(_calBuilt).forEach(k => delete _calBuilt[k]);
+  renderTabs();
+  renderPistas();
+}
+
+function formatRango(inicio) {
+  if (!inicio) return 'Semana';
+  const d = new Date(inicio);
+  const fin = new Date(d); fin.setDate(fin.getDate()+6);
+  const m = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  return `${d.getDate()} ${m[d.getMonth()]} — ${fin.getDate()} ${m[fin.getMonth()]}`;
+}
+
+function fillTipoSelect(valorActual) {
+  const sel = document.getElementById('bl-tipo');
+  sel.innerHTML = _cfgTiposBloq.map(t=>`<option value="${t}" ${t===valorActual?'selected':''}>${t}</option>`).join('')
+    + '<option value="__nuevo__">+ Añadir tipo…</option>';
+  if (valorActual) sel.value = valorActual;
+}
+function onSelectNuevoTipo(sel) {
+  if (sel.value !== '__nuevo__') return;
+  sel.value = _cfgTiposBloq[0]||'Clase';
+  document.getElementById('nuevo-tipo-wrap').style.display = 'flex';
+  document.getElementById('nuevo-tipo-inp').focus();
+}
+async function confirmarNuevoTipo() {
+  const val = document.getElementById('nuevo-tipo-inp').value.trim();
+  if (!val) return;
+  if (!_cfgTiposBloq.includes(val)) {
+    _cfgTiposBloq.push(val);
+    await saveConfig('tipos_bloque', _cfgTiposBloq);
+  }
+  cancelarNuevoTipo();
+  fillTipoSelect(val);
+  toast('Tipo añadido','ok');
+}
+function cancelarNuevoTipo() { document.getElementById('nuevo-tipo-wrap').style.display='none'; }
+
+function fillMonitorSelect(valorActual) {
+  const sel = document.getElementById('bl-monitor');
+  sel.innerHTML = '<option value="">— Sin monitor —</option>'
+    + _cfgMonitores.map(m=>`<option value="${m}" ${m===valorActual?'selected':''}>${m}</option>`).join('')
+    + '<option value="__nuevo__">+ Añadir monitor…</option>';
+  if (valorActual) sel.value = valorActual;
+}
+function onSelectNuevoMonitor(sel) {
+  if (sel.value !== '__nuevo__') return;
+  sel.value = '';
+  document.getElementById('nuevo-monitor-wrap').style.display = 'flex';
+  document.getElementById('nuevo-monitor-inp').focus();
+}
+async function confirmarNuevoMonitor() {
+  const val = document.getElementById('nuevo-monitor-inp').value.trim();
+  if (!val) return;
+  if (!_cfgMonitores.includes(val)) {
+    _cfgMonitores.push(val);
+    await saveConfig('monitores', _cfgMonitores);
+  }
+  cancelarNuevoMonitor();
+  fillMonitorSelect(val);
+  toast('Monitor añadido','ok');
+}
+function cancelarNuevoMonitor() { document.getElementById('nuevo-monitor-wrap').style.display='none'; }
+
+
+// ── Constantes calendario ──────────────────────
+const HORA_CAL_INI = 8;
+const HORA_CAL_FIN = 22;
+const HORAS_CAL = HORA_CAL_FIN - HORA_CAL_INI; // 14
+const DIAS_CAL = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+const COLORES_TIPO = {
+  Clase:      { bg:'#dbeafe', fg:'#1e40af', bd:'#2563eb' },
+  Torneo:     { bg:'#ede9fe', fg:'#5b21b6', bd:'#7c3aed' },
+  Particular: { bg:'#fef3c7', fg:'#92400e', bd:'#f59e0b' },
+  Libre:      { bg:'#f1f5f9', fg:'#475569', bd:'#94a3b8' },
+};
+function colorTipo(tipo) {
+  return COLORES_TIPO[tipo] || { bg:'#f1f5f9', fg:'#475569', bd:'#94a3b8' };
+}
+
+// ── Pestañas Semana / Pista 1 / Pista 2... ───────
+function renderPistasTabs() {
+  const np = _semana?.num_pistas || 3;
+  const tabsEl = document.getElementById('pistas-tabs');
+  let html = `<button class="ptab-btn active" id="ptab-btn-semana" onclick="switchPistasTab('semana',this)">📋 Semana</button>`;
+  for (let p = 1; p <= np; p++) {
+    html += `<button class="ptab-btn" id="ptab-btn-p${p}" onclick="switchPistasTab('p${p}',this)">Pista ${p}</button>`;
+  }
+  tabsEl.innerHTML = html;
+
+  // Create calendar panels
+  const calsEl = document.getElementById('ptab-cals');
+  let calsHtml = '';
+  for (let p = 1; p <= np; p++) {
+    calsHtml += `
+    <div class="ptab-panel" id="ptab-p${p}" style="flex-direction:column">
+      <div class="cal-wrap" id="cal-wrap-${p}">
+        <div class="cal-head">
+          <div class="cal-head-spc"></div>
+          <div class="cal-head-days" id="cal-head-${p}"></div>
+        </div>
+        <div class="cal-grid" id="cal-grid-${p}"></div>
+      </div>
+    </div>`;
+  }
+  calsEl.innerHTML = calsHtml;
+}
+
+function switchPistasTab(id, btn) {
+  // Hide all panels
+  document.getElementById('ptab-semana').classList.remove('active');
+  document.querySelectorAll('[id^="ptab-p"]').forEach(el => el.classList.remove('active'));
+  // Deactivate all tab buttons
+  document.querySelectorAll('.ptab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (id === 'semana') {
+    document.getElementById('ptab-semana').classList.add('active');
+  } else {
+    const pistaNum = parseInt(id.replace('p',''));
+    document.getElementById('ptab-' + id).classList.add('active');
+    buildCalPista(pistaNum);
+  }
+}
+
+// Track which pista cals are built
+const _calBuilt = {};
+
+function buildCalPista(pistaNum) {
+  if (_calBuilt[pistaNum]) return;
+  _calBuilt[pistaNum] = true;
+
+  const pistaNombre = `Pista ${pistaNum}`;
+  const headEl = document.getElementById(`cal-head-${pistaNum}`);
+  const gridEl = document.getElementById(`cal-grid-${pistaNum}`);
+  const wrapEl = document.getElementById(`cal-wrap-${pistaNum}`);
+
+  // Compute row height to fill screen without scroll
+  requestAnimationFrame(() => {
+    const availH = wrapEl.offsetHeight - headEl.closest('.cal-head').offsetHeight;
+    const rowH = Math.max(Math.floor(availH / HORAS_CAL), 16);
+
+    // Day headers
+    headEl.innerHTML = DIAS_CAL.map((d,i) => {
+      const fecha = fechaDia(i);
+      const num = fecha.getDate();
+      return `<div class="cal-hd"><span class="hdn">${num}</span>${d}</div>`;
+    }).join('');
+
+    // Time column
+    let timeHtml = '<div class="cal-tcol">';
+    for (let h = 0; h < HORAS_CAL; h++) {
+      timeHtml += `<div class="cal-tlbl" style="height:${rowH}px">${HORA_CAL_INI + h}h</div>`;
+    }
+    timeHtml += '</div>';
+
+    // Day columns
+    let daysHtml = '<div class="cal-dcols">';
+    for (let d = 0; d < 7; d++) {
+      daysHtml += `<div class="cal-dcol" id="dcol-${pistaNum}-${d}">`;
+      for (let h = 0; h < HORAS_CAL; h++) {
+        daysHtml += `<div class="cal-hrow" style="height:${rowH}px"></div>`;
+      }
+      // Events for this day + pista
+      const bloques = (_semana.bloques_pista || [])
+        .filter(b => b.pista === pistaNombre && Number(b.dia) === d);
+
+      bloques.forEach(b => {
+        const ini = b.hora_inicio?.slice(0,5) || '00:00';
+        const fin = b.hora_fin?.slice(0,5) || '00:00';
+        const [ih, im] = ini.split(':').map(Number);
+        const [fh, fm] = fin.split(':').map(Number);
+        const fracIni = (ih - HORA_CAL_INI) + im / 60;
+        const fracFin = (fh - HORA_CAL_INI) + fm / 60;
+        const top = fracIni * rowH;
+        const height = Math.max((fracFin - fracIni) * rowH - 1, 10);
+        const grupo = _grupos.find(g => g.id === b.grupo_id);
+        const titulo = grupo ? grupo.nombre : (b.actividad || b.tipo || '');
+        const monitor = b.monitor || (grupo ? grupo.monitor : '');
+        const col = colorTipo(b.tipo);
+        // encode for popup
+        const bData = JSON.stringify({ ini, fin, titulo, tipo: b.tipo, monitor, actividad: b.actividad, color: b.color });
+        daysHtml += `<div class="cal-ev" style="top:${top}px;height:${height}px;background:${col.bg};border-left:2.5px solid ${col.bd}"
+          onclick='abrirCalPopup(${JSON.stringify(bData)})'>
+          <div class="ev-t" style="color:${col.fg}">${titulo}</div>
+          ${height > 16 ? `<div class="ev-s" style="color:${col.fg}">${ini}–${fin}${monitor?' · '+monitor:''}</div>` : ''}
+        </div>`;
+      });
+      daysHtml += '</div>';
+    }
+    daysHtml += '</div>';
+
+    gridEl.innerHTML = timeHtml + daysHtml;
+  });
+}
+
+function abrirCalPopup(bDataStr) {
+  const b = JSON.parse(bDataStr);
+  const col = colorTipo(b.tipo);
+  let html = `
+    <div class="cal-popup-handle"></div>
+    <div class="cal-popup-badge" style="background:${col.bg};color:${col.fg}">${b.tipo||'Bloque'}</div>
+    <div class="cal-popup-title">${b.titulo}</div>
+    <div class="cal-popup-sub">${b.ini} – ${b.fin}</div>
+    <div class="cal-popup-row"><span class="cal-popup-lbl">Horario</span><span class="cal-popup-val">${b.ini} – ${b.fin}</span></div>`;
+  if (b.monitor) html += `<div class="cal-popup-row"><span class="cal-popup-lbl">Monitor</span><span class="cal-popup-val">👤 ${b.monitor}</span></div>`;
+  if (b.actividad) html += `<div class="cal-popup-row"><span class="cal-popup-lbl">Actividad</span><span class="cal-popup-val">${b.actividad}</span></div>`;
+  html += `<button class="cal-popup-close" onclick="cerrarCalPopup()">Cerrar</button>`;
+
+  let overlay = document.getElementById('cal-popup-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'cal-popup-overlay';
+    overlay.className = 'cal-popup-overlay';
+    overlay.onclick = e => { if (e.target === overlay) cerrarCalPopup(); };
+    overlay.innerHTML = `<div class="cal-popup-sheet" id="cal-popup-sheet"></div>`;
+    document.body.appendChild(overlay);
+  }
+  document.getElementById('cal-popup-sheet').innerHTML = html;
+  overlay.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+function cerrarCalPopup() {
+  const el = document.getElementById('cal-popup-overlay');
+  if (el) el.style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+async function init() {
+  if (!semanaId) { window.location.href='pistas.html'; return; }
+  try {
+    await initStore();
+    // Intentar con relación anidada; si falla, cargar bloques por separado
+    let semanaData, bloquesData;
+    const { data: sd, error: se } = await _sb.from('semanas_pista').select('*').eq('id',semanaId).single();
+    if (se) throw se;
+    semanaData = sd;
+    const { data: bd, error: be } = await _sb.from('bloques_pista').select('*').eq('semana_id',semanaId);
+    if (be) console.warn('Error cargando bloques:', be);
+    semanaData.bloques_pista = bd || [];
+    _semana = semanaData;
+    _grupos = await getGrupos();
+
+    // Cargar tipos y monitores dinámicos (sin lanzar si no existen)
+    try {
+      const cfgTipos = await getConfig('tipos_bloque');
+      if (cfgTipos && cfgTipos.length) _cfgTiposBloq = cfgTipos;
+    } catch(e) {}
+    try {
+      const cfgMon = await getConfig('monitores');
+      if (cfgMon && cfgMon.length) _cfgMonitores = cfgMon;
+    } catch(e) {}
+
+    fillTipoSelect('Clase');
+    fillMonitorSelect('');
+
+    // Cargar grupos en select
+    const sel = document.getElementById('bl-grupo');
+    _grupos.forEach(g => { const o=document.createElement('option'); o.value=g.id; o.textContent=g.nombre; sel.appendChild(o); });
+
+    renderHeader({
+      titulo:    'Escuela de Pádel',
+      subtitulo: `${_semana ? formatRango(_semana.fecha_inicio) : 'Semana'} · ${_semana?.num_pistas||3} pistas`,
+      icono:     'icons/pistas.png',
+      botonDerecho: 'back',
+      onBack:    'pistas.html',
+    });
+    renderNav('pistas');
+    renderPistasTabs();
+    renderTabs();
+    renderPistas();
+  } catch(e) {
+    console.error('Error cargando pistas:', e);
+    renderHeader({ titulo:'Escuela de Pádel', subtitulo:'Pistas', icono:'icons/pistas.png', botonDerecho:'back', onBack:'pistas.html' });
+    renderNav('pistas');
+    document.getElementById('main-pistas').innerHTML = '<div class="empty-state" style="padding:32px;text-align:center">Error al cargar la semana.<br><small style="color:#e05a5a">' + (e.message||'Error desconocido') + '</small><br><br><a href="pistas.html" class="btn">← Volver</a></div>';
+  }
+
+  // ── Inicializar selects custom ──
+  nselInit('bl-tipo');
+  nselInit('bl-grupo');
+  nselInit('bl-monitor');
+}
+init();
+</script>
+</body>
+</html>

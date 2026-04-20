@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>Torneos — Escuela de Pádel</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="page">
+  <div id="header-container"></div>
+  <nav id="nav-container"></nav>
+
+  <main class="content">
+    <div class="sec">
+      <img src="icons/torneos.png">
+      <div class="sec-title">Torneos <button onclick="abrirInfoTipo()" style="background:none;border:none;color:#2563eb;font-size:13px;font-weight:800;cursor:pointer;padding:0;font-family:Nunito,sans-serif">Info.</button></div>
+      <div class="sec-count" id="contador">—</div>
+    </div>
+
+
+    <button class="btn-anadir" onclick="abrirSheet()">
+      <div class="btn-anadir-plus">+</div>
+      Añadir torneo
+    </button>
+
+    <div class="search" style="margin-bottom:8px">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input id="buscador" type="text" placeholder="Buscar por nombre…" oninput="filtrar()">
+    </div>
+    <div style="display:flex;gap:8px;padding:0 0 10px;align-items:flex-end">
+      <div style="flex:1">
+        <div class="filter-label">Tipo</div>
+        <select id="filtro-tipo-torneo" style="display:none" onchange="sfFromSel(this.value)">
+          <option value="">Todos</option>
+          <option value="Americano">Americano</option>
+          <option value="Mexicano">Mexicano</option>
+          <option value="Escalera">Escalera</option>
+          <option value="Round Robin">Round Robin</option>
+        </select>
+        <div class="nsel-wrap" id="filtro-tipo-torneo-nsel"></div>
+      </div>
+      <div style="flex:1">
+        <div class="filter-label">Estado</div>
+        <select id="filtro-estado-torneo" style="display:none" onchange="sfEstadoFromSel(this.value)">
+          <option value="">Todos</option>
+          <option value="en_curso">En curso</option>
+          <option value="finalizado">Finalizado</option>
+        </select>
+        <div class="nsel-wrap" id="filtro-estado-torneo-nsel"></div>
+      </div>
+    </div>
+
+    <div id="lista-torneos"><div class="loading"><div class="spinner"></div></div></div>
+  </main>
+
+  <!-- Sheet nuevo torneo -->
+  <div class="overlay" id="sh-torneo">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">Nuevo torneo</div>
+      <div class="fgrp">
+        <div class="flbl">Nombre</div>
+        <input class="finp" id="to-nombre" placeholder="Ej: Americano Abril">
+      </div>
+      <div class="frow">
+        <div class="fgrp">
+          <div class="flbl">Tipo</div>
+          <div class="fsel-wrap"><select class="fsel" id="to-tipo" onchange="onTipoChange()">
+            <option>Americano</option>
+            <option>Mexicano</option>
+            <option>Escalera</option>
+            <option>Round Robin</option>
+          </select></div>
+        </div>
+        <div class="fgrp">
+          <div class="flbl">Fecha</div>
+          <input class="finp" id="to-fecha" type="date">
+        </div>
+      </div>
+      <!-- Selección jugadores -->
+      <div class="fgrp">
+        <div class="flbl">Buscar jugadores</div>
+        <input class="finp" id="to-buscar" placeholder="Nombre o grupo..." oninput="filtrarJugadores()">
+      </div>
+      <!-- Contador -->
+      <div id="to-contador" style="font-size:12px;font-weight:800;color:var(--azul);margin:4px 0 6px;min-height:18px"></div>
+      <!-- Lista jugadores normales (Americano/Mexicano/Robin) -->
+      <div id="to-lista-jugadores" style="max-height:220px;overflow-y:auto;border:1.5px solid var(--borde);border-radius:10px;padding:4px 6px;display:none"></div>
+      <!-- Listas Escalera: Estrellas + Promesas -->
+      <div id="to-escalera-wrap" style="display:none">
+        <div style="font-size:11px;font-weight:900;color:var(--texto);margin:6px 0 3px">⭐ Estrellas</div>
+        <div id="to-lista-estrellas" style="max-height:140px;overflow-y:auto;border:1.5px solid var(--borde);border-radius:10px;padding:4px 6px"></div>
+        <div style="font-size:11px;font-weight:900;color:var(--texto);margin:8px 0 3px">🌱 Promesas</div>
+        <div id="to-lista-promesas" style="max-height:140px;overflow-y:auto;border:1.5px solid var(--borde);border-radius:10px;padding:4px 6px"></div>
+      </div>
+      <!-- Round Robin: parejas fijas -->
+      <div id="to-robin-wrap" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin:6px 0 8px">
+          <div style="font-size:11px;font-weight:900;color:var(--texto)">Parejas (2-6 parejas)</div>
+          <div style="display:flex;gap:6px">
+            <button class="sbtn" style="padding:4px 10px;font-size:11px" onclick="addPareja()">+ Pareja</button>
+            <button class="sbtn" style="padding:4px 10px;font-size:11px" onclick="parejaAlAzar()">🎲 Azar</button>
+          </div>
+        </div>
+        <div id="to-robin-parejas" style="display:flex;flex-direction:column;gap:6px"></div>
+        <div id="to-robin-contador" style="font-size:12px;font-weight:800;color:var(--azul);margin-top:6px;min-height:18px"></div>
+      </div>
+      <div class="sheet-btns">
+        <button class="sbtn" onclick="closeSheet('sh-torneo')">Cancelar</button>
+        <button class="sbtn prim" onclick="crearTorneo()">✓ Crear torneo</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sheet info tipos de torneo -->
+  <div class="overlay" id="sh-info-tipo">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">Torneos de escuela</div>
+      <div style="background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:12px;padding:11px 13px;margin-bottom:14px">
+        <div style="font-size:12px;font-weight:900;color:#1e40af;margin-bottom:4px">📋 Torneos de escuela</div>
+        <div style="font-size:12px;font-weight:600;color:var(--sub);line-height:1.5">Los torneos de esta pantalla son para uso interno de la escuela — partidos puntuales con tus alumnos, sin inscripciones ni calendarios. Rápidos de crear y gestionar.</div>
+      </div>
+      <div style="font-size:12px;font-weight:900;color:var(--sutil);margin-bottom:10px;letter-spacing:.5px">TIPOS DE TORNEO DE ESCUELA</div>
+      <div style="display:flex;flex-direction:column;gap:14px;padding-bottom:4px">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+            <img src="icons/americano.png" style="width:22px;height:22px;object-fit:contain">
+            <div style="font-size:14px;font-weight:900;color:var(--texto)">Americano</div>
+          </div>
+          <div style="font-size:13px;font-weight:600;color:var(--sub);line-height:1.55">Todos contra todos rotando parejas cada ronda. Cada jugador tiene compañeros y rivales distintos en cada jornada. Gana quien más puntos acumule en total. Ideal para grupos donde todo el mundo quiere jugar con todos.</div>
+        </div>
+        <div style="height:1px;background:var(--borde)"></div>
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+            <img src="icons/mexicano.png" style="width:22px;height:22px;object-fit:contain">
+            <div style="font-size:14px;font-weight:900;color:var(--texto)">Mexicano</div>
+          </div>
+          <div style="font-size:13px;font-weight:600;color:var(--sub);line-height:1.55">Como el Americano, todos contra todos rotando parejas cada ronda. La diferencia es cómo se asignan las pistas: los jugadores se ordenan por clasificación y se agrupan de 4 en 4 — los mejores en la pista 1, los siguientes en la pista 2, y así sucesivamente. Dentro de cada pista se rotan los compañeros igual que en el Americano.</div>
+        </div>
+        <div style="height:1px;background:var(--borde)"></div>
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+            <img src="icons/escalera.png" style="width:22px;height:22px;object-fit:contain">
+            <div style="font-size:14px;font-weight:900;color:var(--texto)">Escalera</div>
+          </div>
+          <div style="font-size:13px;font-weight:600;color:var(--sub);line-height:1.55">Las pistas tienen jerarquía — la pista 1 es la principal. En cada pista juegan 4 jugadores (2 estrellas + 2 promesas) formando dos parejas cruzadas. Los ganadores suben de pista y los perdedores bajan. Se juegan ilimitadas jornadas hasta que decidas finalizar.</div>
+        </div>
+        <div style="height:1px;background:var(--borde)"></div>
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+            <img src="icons/robin.png" style="width:22px;height:22px;object-fit:contain">
+            <div style="font-size:14px;font-weight:900;color:var(--texto)">Round Robin</div>
+          </div>
+          <div style="font-size:13px;font-weight:600;color:var(--sub);line-height:1.55">Torneo por parejas fijas. Cada pareja juega contra todas las demás exactamente una vez. Gana la pareja con más victorias al final. Perfecto para grupos pequeños con nivel parejo.</div>
+        </div>
+      </div>
+      <div class="sheet-btns" style="margin-top:8px">
+        <button class="sbtn prim" style="flex:1" onclick="closeSheet('sh-info-tipo')">Entendido</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="confirm-overlay" id="confirm-overlay">
+    <div class="confirm-box">
+      <div class="confirm-titulo">¿Eliminar torneo?</div>
+      <div class="confirm-texto" id="confirm-texto"></div>
+      <div class="confirm-btns">
+        <button class="cbtn" onclick="document.getElementById('confirm-overlay').classList.remove('open')">Cancelar</button>
+        <button class="cbtn danger" id="confirm-ok">Eliminar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/store.js"></script>
+<script src="js/ui.js"></script>
+<script>
+let _torneos = [];
+let _filtro  = '';
+let _alumnos = [];
+
+const ICONO = { Americano:'icons/americano.png', Escalera:'icons/escalera.png',
+                Mexicano:'icons/mexicano.png', 'Round Robin':'icons/robin.png' };
+
+function sf(btn) {
+  btn.closest('.filters').querySelectorAll('.fbtn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active'); _filtro = btn.dataset.value||''; filtrar();
+}
+function sfFromSel(val) {
+  _filtro = val;
+  filtrar();
+}
+let _filtroEstado = '';
+function sfEstadoFromSel(val) {
+  _filtroEstado = val;
+  filtrar();
+}
+
+function filtrar() {
+  const q = (document.getElementById('buscador')?.value||'').toLowerCase().trim();
+  const lista = _torneos.filter(t => {
+    if (_filtro && t.tipo !== _filtro) return false;
+    if (_filtroEstado && t.estado !== _filtroEstado) return false;
+    if (!q) return true;
+    return [t.nombre, t.tipo, t.estado].filter(Boolean).join(' ').toLowerCase().includes(q);
+  });
+  renderLista(lista);
+}
+
+function chipEstado(estado) {
+  if (estado==='en_curso')   return '<span class="chip cam">En curso</span>';
+  if (estado==='finalizado') return '<span class="chip cgr">Finalizado</span>';
+  return `<span class="chip cgr">${estado||'—'}</span>`;
+}
+
+function renderLista(lista) {
+  document.getElementById('contador').textContent = lista.length;
+  const el = document.getElementById('lista-torneos');
+  if (!lista.length) { showEmpty('lista-torneos','Sin torneos aún'); return; }
+  el.innerHTML = lista.map(t => {
+    const finalizado = t.estado === 'finalizado';
+    return `
+    <div class="card" id="card-${t.id}" style="border-left-color:${chipColor(t.tipo).tx}">
+      <div class="card-main" onclick="toggleCard('${t.id}')">
+        <div class="av sq" style="background:#eff6ff;overflow:hidden">
+          <img src="${ICONO[t.tipo]||'icons/torneos.png'}" style="width:32px;height:32px;object-fit:contain">
+        </div>
+        <div class="ci">
+          <div class="cn">${t.nombre}</div>
+          <div class="cm">
+            <span class="chip" style="background:${chipColor(t.tipo).bg};color:${chipColor(t.tipo).tx}">${t.tipo}</span>
+            <span class="chip cgr">${t.num_jugadores||'?'} jug.</span>
+            ${chipEstado(t.estado)}
+          </div>
+        </div>
+        <div class="chev" id="chev-${t.id}">▼</div>
+      </div>
+      <div class="exp" id="exp-${t.id}">
+        <div id="ranking-${t.id}" style="margin-bottom:8px"></div>
+        <div class="abtns">
+          <button class="abtn prim" onclick="window.location.href='torneo-interior.html?id=${t.id}'">
+            ${finalizado ? '👁 Ver torneo' : '✏️ Gestionar'}
+          </button>
+          <button class="abtn dang" onclick="confirmarEliminar('${t.id}','${t.nombre.replace(/'/g,"\'") }')">🗑 Eliminar</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Cargar rankings en paralelo para torneos que se abran
+  lista.forEach(t => {
+    const expEl = document.getElementById('exp-' + t.id);
+    if (!expEl) return;
+    // Se carga al expandir via MutationObserver ligero
+    const rankEl = document.getElementById('ranking-' + t.id);
+    if (rankEl) rankEl.dataset.torneoId = t.id;
+  });
+}
+
+async function cargarRanking(torneoId) {
+  const rankEl = document.getElementById('ranking-' + torneoId);
+  if (!rankEl || rankEl.dataset.loaded) return;
+  rankEl.dataset.loaded = '1';
+  try {
+    const { data: parts } = await _sb.from('participantes').select('nombre,rol').eq('torneo_id', torneoId);
+    const { data: partidos } = await _sb.from('partidos').select('pareja_a,pareja_b,resultado_a,resultado_b').eq('torneo_id', torneoId).not('resultado_a','is',null);
+    if (!partidos || !partidos.length) { rankEl.innerHTML = '<div style="font-size:11px;color:var(--sutil);padding:2px 0 6px">Sin resultados aún</div>'; return; }
+    const torneo = _torneos.find(t=>t.id===torneoId);
+    const esRobin = torneo && torneo.tipo === 'Round Robin';
+    const pts = {};
+    if (esRobin) {
+      // Robin: obtener parejas únicas desde los partidos (clave canónica, evita problemas de orden BD)
+      const parejasSet = new Set();
+      (partidos||[]).forEach(p => { if(p.pareja_a) parejasSet.add(p.pareja_a); if(p.pareja_b) parejasSet.add(p.pareja_b); });
+      if (!parejasSet.size) {
+        const partsArr = parts||[];
+        for (let i=0; i<partsArr.length; i+=2) {
+          const nombre = partsArr[i+1] ? `${partsArr[i].nombre} / ${partsArr[i+1].nombre}` : partsArr[i].nombre;
+          parejasSet.add(nombre);
+        }
+      }
+      parejasSet.forEach(n => { pts[n] = {pts:0,pg:0,pj:0}; });
+    } else {
+      (parts||[]).forEach(p => pts[p.nombre] = {pts:0,pg:0,pj:0});
+    }
+    partidos.forEach(p => {
+      const ra=+p.resultado_a, rb=+p.resultado_b;
+      if (esRobin) {
+        const a=p.pareja_a, b=p.pareja_b;
+        if(!pts[a]) pts[a]={pts:0,pg:0,pj:0};
+        if(!pts[b]) pts[b]={pts:0,pg:0,pj:0};
+        pts[a].pj++; pts[b].pj++; pts[a].pts+=ra; pts[b].pts+=rb;
+        if(ra>rb) pts[a].pg++; else if(rb>ra) pts[b].pg++;
+      } else {
+        const jugA=p.pareja_a.split('/').map(n=>n.trim()).filter(Boolean);
+        const jugB=p.pareja_b.split('/').map(n=>n.trim()).filter(Boolean);
+        [...jugA,...jugB].forEach(n=>{if(!pts[n])pts[n]={pts:0,pg:0,pj:0};});
+        jugA.forEach(n=>{pts[n].pj++;pts[n].pts+=ra;if(ra>rb)pts[n].pg++;});
+        jugB.forEach(n=>{pts[n].pj++;pts[n].pts+=rb;if(rb>ra)pts[n].pg++;});
+      }
+    });
+    const cls = Object.entries(pts).map(([n,v])=>({nombre:n,...v})).sort((a,b)=>b.pts-a.pts||b.pg-a.pg).slice(0,3);
+    const medals = ['🥇','🥈','🥉'];
+    rankEl.innerHTML = `<div style="font-size:10px;font-weight:900;color:var(--sutil);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Top clasificados</div>` +
+      cls.map((r,i)=>`<div style="display:flex;align-items:center;gap:7px;padding:4px 0;border-bottom:1px solid #f0f4f8">
+        <span style="font-size:13px">${medals[i]}</span>
+        <span style="flex:1;font-size:12px;font-weight:800;color:var(--texto)">${r.nombre}</span>
+        <span style="font-size:12px;font-weight:900;color:var(--azul)">${r.pts} pts</span>
+      </div>`).join('');
+  } catch(e) { rankEl.innerHTML = ''; }
+}
+
+// ── Info tipos torneo ─────────────────────────
+function abrirInfoTipo() {
+  openSheet('sh-info-tipo');
+}
+
+// ── Formulario nuevo torneo ────────────────────
+
+function onTipoChange() {
+  const tipo = document.getElementById('to-tipo').value;
+  const esEscalera = tipo === 'Escalera';
+  const esRobin = tipo === 'Round Robin';
+  document.getElementById('to-buscar').closest('.fgrp').style.display = esRobin ? 'none' : 'block';
+  document.getElementById('to-lista-jugadores').style.display = (!esEscalera && !esRobin) ? 'block' : 'none';
+  document.getElementById('to-escalera-wrap').style.display = esEscalera ? 'block' : 'none';
+  document.getElementById('to-robin-wrap').style.display = esRobin ? 'block' : 'none';
+  if (esRobin) renderRobinParejas();
+  actualizarContador();
+  if (!esRobin) filtrarJugadores();
+}
+
+function filtrarJugadores() {
+  const q = (document.getElementById('to-buscar').value||'').toLowerCase();
+  const tipo = document.getElementById('to-tipo').value;
+  const esEscalera = tipo === 'Escalera';
+  const filtrados = _alumnos.filter(a => !q || a.nombre.toLowerCase().includes(q));
+
+  if (!esEscalera) {
+    const sel = getSeleccionados();
+    document.getElementById('to-lista-jugadores').innerHTML = filtrados.map(a => `
+      <label style="display:flex;align-items:center;gap:8px;padding:7px 4px;border-bottom:1px solid #f0f4f8;cursor:pointer">
+        <input type="checkbox" value="${a.id}" data-nombre="${a.nombre}"
+          ${sel.includes(a.id)?'checked':''} onchange="actualizarContador()" style="width:16px;height:16px;accent-color:var(--azul)">
+        <span style="font-size:12px;font-weight:700;flex:1">${a.nombre}</span>
+        ${a.nivel ? chipNivel(a.nivel) : ''}
+      </label>`).join('') || '<div style="padding:8px;font-size:11px;color:var(--sutil)">Sin resultados</div>';
+  } else {
+    const selE = getSelEscalera('estrellas');
+    const selP = getSelEscalera('promesas');
+    document.getElementById('to-lista-estrellas').innerHTML = filtrados.map(a => `
+      <label style="display:flex;align-items:center;gap:8px;padding:7px 4px;border-bottom:1px solid #f0f4f8;cursor:pointer">
+        <input type="checkbox" value="${a.id}" data-nombre="${a.nombre}" data-tipo="estrella"
+          ${selE.includes(a.id)?'checked':''} onchange="actualizarContador()" style="width:16px;height:16px;accent-color:#f59e0b">
+        <span style="font-size:12px;font-weight:700;flex:1">${a.nombre}</span>
+      </label>`).join('') || '<div style="padding:8px;font-size:11px;color:var(--sutil)">Sin alumnos</div>';
+    document.getElementById('to-lista-promesas').innerHTML = filtrados.map(a => `
+      <label style="display:flex;align-items:center;gap:8px;padding:7px 4px;border-bottom:1px solid #f0f4f8;cursor:pointer">
+        <input type="checkbox" value="${a.id}" data-nombre="${a.nombre}" data-tipo="promesa"
+          ${selP.includes(a.id)?'checked':''} onchange="actualizarContador()" style="width:16px;height:16px;accent-color:var(--verde)">
+        <span style="font-size:12px;font-weight:700;flex:1">${a.nombre}</span>
+      </label>`).join('') || '<div style="padding:8px;font-size:11px;color:var(--sutil)">Sin alumnos</div>';
+  }
+  actualizarContador();
+}
+
+function getSeleccionados() {
+  return [...document.querySelectorAll('#to-lista-jugadores input:checked')].map(i=>i.value);
+}
+function getSelEscalera(tipo) {
+  const id = tipo==='estrellas' ? 'to-lista-estrellas' : 'to-lista-promesas';
+  return [...document.querySelectorAll(`#${id} input:checked`)].map(i=>i.value);
+}
+
+function actualizarContador() {
+  const tipo = document.getElementById('to-tipo').value;
+  let txt = '';
+  if (tipo === 'Escalera') {
+    const ne = getSelEscalera('estrellas').length;
+    const np = getSelEscalera('promesas').length;
+    txt = `⭐ ${ne} estrella${ne!==1?'s':''} · 🌱 ${np} promesa${np!==1?'s':''}`;
+  } else if (tipo === 'Round Robin') {
+    const ok = _robinParejas.filter(p=>p.j1.trim()&&p.j2.trim()).length;
+    const tot = _robinParejas.length;
+    const ctr = document.getElementById('to-robin-contador');
+    if (ctr) {
+      if (tot===0) ctr.textContent = 'Añade entre 2 y 6 parejas';
+      else if (tot<2) ctr.textContent = '⚠️ Mínimo 2 parejas';
+      else ctr.textContent = `${tot} pareja${tot!==1?'s':''} · ${ok} completa${ok!==1?'s':''}`;
+    }
+    return;
+  } else {
+    const n = getSeleccionados().length;
+    txt = `${n} jugador${n!==1?'es':''} seleccionado${n!==1?'s':''}`;
+  }
+  document.getElementById('to-contador').textContent = txt;
+}
+
+function getNombresSeleccionados() {
+  return [...document.querySelectorAll('#to-lista-jugadores input:checked')].map(i=>i.dataset.nombre);
+}
+function getNombresEscalera(tipo) {
+  const id = tipo==='estrellas' ? 'to-lista-estrellas' : 'to-lista-promesas';
+  return [...document.querySelectorAll(`#${id} input:checked`)].map(i=>i.dataset.nombre);
+}
+
+
+// ── Round Robin: gestión de parejas ────────────────────────────────────────
+let _robinParejas = []; // [{j1:'', j2:''}, ...]
+
+function renderRobinParejas() {
+  const wrap = document.getElementById('to-robin-parejas');
+  if (!wrap) return;
+  wrap.innerHTML = _robinParejas.map((p, i) => `
+    <div style="display:flex;gap:6px;align-items:center">
+      <div style="width:20px;font-size:12px;font-weight:900;color:var(--azul);text-align:center">${i+1}</div>
+      <input class="finp" style="flex:1;padding:7px 10px;font-size:12px" placeholder="Jugador 1"
+        value="${p.j1||''}" oninput="_robinParejas[${i}].j1=this.value;actualizarContador()">
+      <span style="font-size:11px;color:var(--sutil);font-weight:900">/</span>
+      <input class="finp" style="flex:1;padding:7px 10px;font-size:12px" placeholder="Jugador 2"
+        value="${p.j2||''}" oninput="_robinParejas[${i}].j2=this.value;actualizarContador()">
+      <button onclick="quitarPareja(${i})" style="background:none;border:none;color:var(--rojo);font-size:18px;cursor:pointer;padding:0 4px;line-height:1">×</button>
+    </div>`).join('');
+  actualizarContador();
+}
+
+function addPareja() {
+  if (_robinParejas.length >= 6) { toast('Máximo 6 parejas','warn'); return; }
+  _robinParejas.push({j1:'', j2:''});
+  renderRobinParejas();
+}
+
+function quitarPareja(i) {
+  _robinParejas.splice(i, 1);
+  renderRobinParejas();
+}
+
+function parejaAlAzar() {
+  const n = parseInt(prompt('¿Cuántas parejas? (2-6)') || '0');
+  if (n < 2 || n > 6) { toast('Entre 2 y 6 parejas','warn'); return; }
+  _robinParejas = Array.from({length:n}, () => ({j1:'', j2:''}));
+  renderRobinParejas();
+  // Rellenar con alumnos al azar si hay alumnos cargados
+  const nombres = [..._alumnos].sort(()=>Math.random()-0.5).map(a=>a.nombre);
+  _robinParejas.forEach((p, i) => {
+    p.j1 = nombres[i*2] || '';
+    p.j2 = nombres[i*2+1] || '';
+  });
+  renderRobinParejas();
+  toast(`${n} parejas generadas al azar`, 'ok');
+}
+
+async function crearTorneo() {
+  const nombre = document.getElementById('to-nombre').value.trim();
+  if (!nombre) { toast('Escribe el nombre','warn'); return; }
+  const tipo = document.getElementById('to-tipo').value;
+
+  let participantes = [];
+  if (tipo === 'Escalera') {
+    const estrellas = getNombresEscalera('estrellas');
+    const promesas  = getNombresEscalera('promesas');
+    if (estrellas.length < 2 || promesas.length < 2) { toast('Selecciona al menos 2 estrellas y 2 promesas','warn'); return; }
+    if (estrellas.length !== promesas.length) { toast('Debe haber el mismo número de estrellas y promesas','warn'); return; }
+    participantes = [
+      ...estrellas.map(n=>({nombre:n, rol:'estrella'})),
+      ...promesas.map(n=>({nombre:n, rol:'promesa'})),
+    ];
+  } else if (tipo === 'Round Robin') {
+    // Robin: cada pareja son 2 participantes consecutivos
+    const parejasOk = _robinParejas.filter(p=>p.j1.trim()&&p.j2.trim());
+    if (parejasOk.length < 2) { toast('Añade al menos 2 parejas completas','warn'); return; }
+    if (parejasOk.length > 6) { toast('Máximo 6 parejas','warn'); return; }
+    parejasOk.forEach(p => {
+      participantes.push({nombre: p.j1.trim(), rol:'jugador'});
+      participantes.push({nombre: p.j2.trim(), rol:'jugador'});
+    });
+  } else {
+    const nombres = getNombresSeleccionados();
+    if (nombres.length < 4) { toast('Selecciona al menos 4 jugadores','warn'); return; }
+    if (nombres.length % 4 !== 0) { toast(`Selecciona un múltiplo de 4 (ahora: ${nombres.length})`, 'warn'); return; }
+    participantes = nombres.map(n=>({nombre:n, rol:'jugador'}));
+  }
+
+  const torneo = {
+    nombre, tipo,
+    num_jugadores: participantes.length,
+    fecha: document.getElementById('to-fecha').value || new Date().toISOString().slice(0,10),
+    estado: 'en_curso',
+  };
+  try {
+    const t = await saveTorneo(torneo);
+    // Guardar participantes
+    if (participantes.length) {
+      await _sb.from('participantes').insert(participantes.map(p=>({...p, torneo_id:t.id})));
+    }
+    closeSheet('sh-torneo');
+    toast('Torneo creado','ok');
+    window.location.href = `torneo-interior.html?id=${t.id}`;
+  } catch(e) { toast('Error al crear','err'); console.error(e); }
+}
+
+// Cargar ranking al expandir card
+function toggleCard(id) {
+  const exp  = document.getElementById('exp-'  + id);
+  const chev = document.getElementById('chev-' + id);
+  const card = document.getElementById('card-' + id);
+  if (!exp) return;
+  const abierta = exp.classList.toggle('open');
+  if (chev) chev.classList.toggle('open', abierta);
+  if (card) card.classList.toggle('card-open', abierta);
+  if (abierta) cargarRanking(id);
+}
+
+async function eliminarTorneo(id) {
+  try {
+    await _sb.from('partidos').delete().eq('torneo_id', id);
+    await _sb.from('participantes').delete().eq('torneo_id', id);
+    await _sb.from('torneos').delete().eq('id', id).eq('escuela_id', Store.escuelaId);
+    toast('Torneo eliminado', 'ok');
+    _torneos = _torneos.filter(t => t.id !== id);
+    filtrar();
+  } catch(e) { toast('Error al eliminar', 'err'); console.error(e); }
+}
+
+function confirmarEliminar(id, nombre) {
+  document.getElementById('confirm-texto').textContent = `¿Eliminar "${nombre}" y todos sus datos?`;
+  document.getElementById('confirm-overlay').classList.add('open');
+  document.getElementById('confirm-ok').onclick = () => {
+    document.getElementById('confirm-overlay').classList.remove('open');
+    eliminarTorneo(id);
+  };
+}
+
+function abrirSheet() {
+  document.getElementById('to-nombre').value = '';
+  document.getElementById('to-buscar').value = '';
+  document.getElementById('to-fecha').value = new Date().toISOString().slice(0,10);
+  document.getElementById('to-tipo').value = 'Americano';
+  // Desmarcar todos los checkboxes
+  document.querySelectorAll('#to-lista-jugadores input, #to-lista-estrellas input, #to-lista-promesas input').forEach(i => i.checked = false);
+  // Limpiar parejas Robin
+  _robinParejas = [];
+  const rp = document.getElementById('to-robin-parejas');
+  if (rp) rp.innerHTML = '';
+  const rc = document.getElementById('to-robin-contador');
+  if (rc) rc.textContent = '';
+  onTipoChange();
+  filtrarJugadores();
+  openSheet('sh-torneo');
+}
+
+async function init() {
+  renderNav('torneos');
+  await initStore();
+  renderHeader({ titulo:'Escuela de Pádel', subtitulo:'Torneos', icono:'icons/torneos.png', botonDerecho:'menu' });
+  showLoading('lista-torneos');
+  [_torneos, _alumnos] = await Promise.all([getTorneos(), getAlumnos()]);
+  filtrar();
+
+  // ── Inicializar selects custom ──
+  nselInit('to-tipo');
+  nselInit('filtro-tipo-torneo');
+  nselInit('filtro-estado-torneo');
+}
+init();
+</script>
+</body>
+</html>

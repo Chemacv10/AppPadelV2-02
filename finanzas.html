@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>Finanzas — Escuela de Pádel</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .empty-modulo {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 60px 24px; text-align: center; gap: 14px;
+    }
+    .empty-modulo img { width: 90px; height: 90px; object-fit: contain; opacity: .7; }
+    .empty-modulo-titulo { font-size: 16px; font-weight: 900; color: var(--texto); }
+    .empty-modulo-sub { font-size: 13px; font-weight: 600; color: var(--sutil); line-height: 1.5; }
+    .badge-proximamente {
+      background: #f0fdf4; color: var(--verde); border: 1.5px solid #bbf7d0;
+      border-radius: 20px; padding: 4px 14px; font-size: 11px; font-weight: 900;
+    }
+  </style>
+</head>
+<body onload="init()">
+<div class="page">
+  <div id="header-container"></div>
+  <nav id="nav-container"></nav>
+
+  <main class="content">
+    <div class="sec">
+      <img src="icons/finanzas.png" alt="Finanzas">
+      <div class="sec-title">Finanzas</div>
+    </div>
+
+    <div class="empty-modulo">
+      <img src="icons/finanzas.png" alt="Finanzas">
+      <div class="empty-modulo-titulo">Módulo de Finanzas</div>
+      <div class="empty-modulo-sub">
+        Liquidaciones, caja global, cobros por monitor<br>
+        y exportación de informes.<br>
+        Disponible próximamente en la v2.0.
+      </div>
+      <span class="badge-proximamente">🚧 En desarrollo</span>
+    </div>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/store.js"></script>
+<script src="js/ui.js"></script>
+<script>
+async function init() {
+  await initStore();
+  renderHeader({ titulo: 'Finanzas', icono: 'icons/finanzas.png' });
+  renderNav('finanzas');
+}
+</script>
+</body>
+</html>

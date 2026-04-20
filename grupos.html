@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>Grupos — Escuela de Pádel</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* ── Horario badge en expandido ── */
+    .horario-badge {
+      display:flex; align-items:center; gap:8px;
+      background:#f8fafc; border:1px solid var(--borde);
+      border-radius:10px; padding:8px 11px; margin-bottom:10px;
+      font-size:12px; font-weight:800; color:var(--texto);
+    }
+
+    /* ── Alumnos en expandido ── */
+    .als-lbl { font-size:10px; font-weight:900; color:var(--sutil); text-transform:uppercase; letter-spacing:.5px; margin-bottom:7px; }
+    .al-fila {
+      display:flex; align-items:center; gap:9px;
+      padding:7px 10px; background:var(--fondo);
+      border-radius:9px; margin-bottom:5px;
+    }
+    .av-sm { width:28px; height:28px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:900; color:#fff; flex-shrink:0; }
+    .al-nombre { flex:1; font-size:12px; font-weight:800; color:var(--texto); }
+
+    /* ── Hora picker ── */
+    .hora-row { display:flex; gap:5px; align-items:center; }
+    .hora-row .fsel { flex:1; }
+    .hora-sep { font-size:14px; font-weight:900; color:var(--sutil); padding:0 2px; }
+
+    /* ── Nuevo inline ── */
+    .nuevo-inline {
+      display: flex; gap: 6px; align-items: center;
+      margin: -6px 0 8px; animation: fadeIn .15s ease;
+    }
+    .nuevo-inline .finp { flex: 1; }
+    .nuevo-inline .sbtn { padding: 9px 12px; min-width: 0; flex-shrink: 0; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:translateY(0); } }
+
+    /* ── Config sheet ── */
+    .cfg-sec-titulo { font-size:10px; font-weight:900; color:var(--sutil); text-transform:uppercase; letter-spacing:.5px; margin:14px 0 7px; }
+    .cfg-chips-wrap { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:8px; }
+    .cfg-chip { display:inline-flex; align-items:center; gap:4px; background:#f1f5f9; border:1.5px solid var(--borde); border-radius:18px; padding:4px 10px; font-size:12px; font-weight:700; color:var(--texto); }
+    .cfg-chip-x { background:none; border:none; color:var(--rojo); font-size:14px; font-weight:900; cursor:pointer; padding:0 0 0 2px; line-height:1; }
+    .cfg-add-row { display:flex; gap:6px; }
+    .cfg-inp { flex:1; background:#f8fafc; border:1.5px solid var(--borde); border-radius:10px; padding:9px 11px; font-size:13px; font-weight:700; color:var(--texto); outline:none; font-family:inherit; }
+    .cfg-inp:focus { border-color:var(--azul); background:var(--card); }
+    .cfg-btn-add { background:var(--texto); color:#fff; border:none; border-radius:10px; padding:9px 14px; font-size:12px; font-weight:900; cursor:pointer; white-space:nowrap; font-family:inherit; }
+
+    /* ── Días chips ── */
+    .dias-grid { display:flex; gap:6px; margin-top:4px; }
+    .dia-chip {
+      flex:1; display:flex; align-items:center; justify-content:center;
+      height:40px; border-radius:10px;
+      font-size:11px; font-weight:900; letter-spacing:.2px;
+      border:2px solid var(--borde); background:var(--fondo);
+      color:var(--sutil); cursor:pointer;
+      transition:all .15s; user-select:none; -webkit-tap-highlight-color:transparent;
+    }
+    .dia-chip.activo { background:var(--azul); border-color:var(--azul); color:#fff; }
+
+    /* ── Hora picker custom ── */
+    .hpick-row { display:flex; align-items:center; gap:6px; }
+    .hpick-box {
+      flex:1; display:flex; align-items:center;
+      background:var(--fondo); border:2px solid var(--borde); border-radius:12px; overflow:hidden;
+    }
+    .hpick-btn {
+      background:none; border:none; color:var(--azul);
+      font-size:20px; font-weight:900; padding:0 12px; height:46px;
+      cursor:pointer; font-family:inherit; flex-shrink:0;
+      -webkit-tap-highlight-color:transparent;
+    }
+    .hpick-btn:active { opacity:.6; }
+    .hpick-val {
+      flex:1; display:flex; align-items:center; justify-content:center; gap:6px;
+      font-size:18px; font-weight:900; color:var(--texto); height:46px;
+      -webkit-tap-highlight-color:transparent; user-select:none;
+    }
+    .hpick-val-arrow { font-size:13px; color:var(--azul); font-weight:900; }
+    .hpick-sep { font-size:20px; font-weight:900; color:var(--sutil); padding:0 2px; }
+    .hpick-wrap { flex:1; position:relative; }
+    .hpick-box { cursor:pointer; }
+    .hpick-box.open { border-color:var(--azul); }
+    .hpick-val { cursor:pointer; -webkit-tap-highlight-color:transparent; user-select:none; }
+    .hpick-drop {
+      position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:300;
+      background:var(--card); border:2px solid var(--azul); border-radius:12px;
+      box-shadow:0 8px 24px rgba(0,0,0,.13);
+      max-height:190px; overflow-y:auto; display:none;
+    }
+    .hpick-drop.open { display:block; }
+    .hpick-opt {
+      padding:11px 0; font-size:16px; font-weight:800;
+      color:var(--texto); text-align:center; cursor:pointer;
+    }
+    .hpick-opt.sel { color:var(--azul); background:#eff6ff; }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <div id="header-container"></div>
+  <nav id="nav-container"></nav>
+
+  <main class="content">
+
+    <div class="sec">
+      <img src="icons/grupos.png">
+      <div class="sec-title">Grupos <button onclick="abrirInfo()" style="background:none;border:none;color:#2563eb;font-size:13px;font-weight:800;cursor:pointer;padding:0;font-family:Nunito,sans-serif">Info.</button></div>
+      
+<div class="sec-count" id="contador">—</div>
+    </div>
+
+    <button class="btn-anadir" onclick="abrirNuevo()">
+      <div class="btn-anadir-plus">+</div>
+      Añadir grupo
+    </button>
+
+    <!-- Buscador -->
+    <div class="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input id="buscador" type="text" placeholder="Buscar por nombre, nivel, pista, monitor…" oninput="filtrar()">
+    </div>
+
+    <!-- Filtros desplegables -->
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <div style="flex:1">
+        <div class="filter-label">Nivel</div>
+        <div class="fsel-wrap"><select class="fsel" id="filtro-nivel" onchange="filtrar()">
+          <option value="">Todos</option>
+        </select></div>
+      </div>
+      <div style="flex:1">
+        <div class="filter-label">Pista</div>
+        <div class="fsel-wrap"><select class="fsel" id="filtro-pista" onchange="filtrar()">
+          <option value="">Todas</option>
+        </select></div>
+      </div>
+      <div style="flex:1">
+        <div class="filter-label">Monitor</div>
+        <div class="fsel-wrap"><select class="fsel" id="filtro-monitor" onchange="filtrar()">
+          <option value="">Todos</option>
+        </select></div>
+      </div>
+    </div>
+
+    <div id="lista-grupos"><div class="loading"><div class="spinner"></div></div></div>
+  </main>
+
+  <!-- ── Sheet: Nuevo / Editar grupo ── -->
+  <div class="overlay" id="sh-grupo">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title" id="sh-titulo">Nuevo grupo</div>
+      <input type="hidden" id="gr-id">
+
+      <div class="fgrp">
+        <div class="flbl">Nombre</div>
+        <input class="finp" id="gr-nombre" placeholder="Ej: Lunes y Miércoles 17h">
+      </div>
+
+      <div class="frow">
+        <div class="fgrp">
+          <div class="flbl">Nivel</div>
+          <div class="csel-wrap" id="gr-nivel-csel"></div>
+        </div>
+        <div class="fgrp">
+          <div class="flbl">Días</div>
+          <div class="dias-grid" id="gr-dias-grid">
+            <div class="dia-chip" data-dia="Lun" onclick="toggleDia(this)">Lun</div>
+            <div class="dia-chip" data-dia="Mar" onclick="toggleDia(this)">Mar</div>
+            <div class="dia-chip" data-dia="Mié" onclick="toggleDia(this)">Mié</div>
+            <div class="dia-chip" data-dia="Jue" onclick="toggleDia(this)">Jue</div>
+            <div class="dia-chip" data-dia="Vie" onclick="toggleDia(this)">Vie</div>
+            <div class="dia-chip" data-dia="Sáb" onclick="toggleDia(this)">Sáb</div>
+            <div class="dia-chip" data-dia="Dom" onclick="toggleDia(this)">Dom</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hora inicio + Duración -->
+      <div class="frow">
+        <div class="fgrp">
+          <div class="flbl">Hora inicio</div>
+          <div class="hpick-row">
+            <div class="hpick-wrap">
+              <div class="hpick-box" id="ini-h-box">
+                <button class="hpick-btn" onclick="hpickStep('ini-h',-1)">‹</button>
+                <div class="hpick-val" id="ini-h-val" onclick="hpickToggle('ini-h')">10<span class="hpick-val-arrow">∨</span></div>
+                <button class="hpick-btn" onclick="hpickStep('ini-h',1)">›</button>
+              </div>
+              <div class="hpick-drop" id="ini-h-drop"></div>
+            </div>
+            <div class="hpick-sep">:</div>
+            <div class="hpick-wrap">
+              <div class="hpick-box" id="ini-m-box">
+                <button class="hpick-btn" onclick="hpickStep('ini-m',-1)">‹</button>
+                <div class="hpick-val" id="ini-m-val" onclick="hpickToggle('ini-m')">00<span class="hpick-val-arrow">∨</span></div>
+                <button class="hpick-btn" onclick="hpickStep('ini-m',1)">›</button>
+              </div>
+              <div class="hpick-drop" id="ini-m-drop"></div>
+            </div>
+          </div>
+        </div>
+        <div class="fgrp">
+          <div class="flbl">Duración</div>
+          <div class="fsel-wrap" style="min-height:46px"><select class="fsel" id="gr-duracion">
+            <option value="30">30 min</option>
+            <option value="35">35 min</option>
+            <option value="40">40 min</option>
+            <option value="45">45 min</option>
+            <option value="50">50 min</option>
+            <option value="55">55 min</option>
+            <option value="60">60 min</option>
+            <option value="65">65 min</option>
+            <option value="70">70 min</option>
+            <option value="75">75 min</option>
+            <option value="80">80 min</option>
+            <option value="85">85 min</option>
+            <option value="90">90 min</option>
+            <option value="95">95 min</option>
+            <option value="100">100 min</option>
+            <option value="105">105 min</option>
+            <option value="110">110 min</option>
+            <option value="115">115 min</option>
+            <option value="120">120 min</option>
+            <option value="125">125 min</option>
+            <option value="130">130 min</option>
+            <option value="135">135 min</option>
+            <option value="140">140 min</option>
+            <option value="145">145 min</option>
+            <option value="150">150 min</option>
+            <option value="155">155 min</option>
+            <option value="160">160 min</option>
+            <option value="165">165 min</option>
+            <option value="170">170 min</option>
+            <option value="175">175 min</option>
+            <option value="180">180 min</option>
+          </select></div>
+        </div>
+      </div>
+
+      <!-- Pista + Monitor en una fila -->
+      <div class="frow">
+        <div class="fgrp">
+          <div class="flbl">Pista</div>
+          <div class="csel-wrap" id="gr-pista-csel"></div>
+        </div>
+        <div class="fgrp">
+          <div class="flbl">Monitor</div>
+          <div class="csel-wrap" id="gr-monitor-csel"></div>
+        </div>
+      </div>
+
+      <!-- Importe + Máximo en una fila -->
+      <div class="frow">
+        <div class="fgrp">
+          <div class="flbl">Cuota mensual (€)</div>
+          <input class="finp" id="gr-importe" type="number" placeholder="0" step="0.01" min="0">
+        </div>
+        <div class="fgrp">
+          <div class="flbl">Máx. alumnos</div>
+          <input class="finp" id="gr-max-alumnos" type="number" placeholder="0" min="0" max="20">
+        </div>
+      </div>
+
+      <div class="sheet-btns">
+        <button class="sbtn" onclick="closeSheet('sh-grupo')">Cancelar</button>
+        <button class="sbtn prim" onclick="guardar()">✓ Guardar</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Sheet: Generar mes de clases -->
+  <div class="overlay" id="sh-generar-mes">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title"><img src="icons/clases.png" style="width:24px;height:24px;object-fit:contain;vertical-align:middle;margin-right:7px">Generar mes de clases</div>
+      <div style="padding:0 15px 4px">
+        <div id="gm-grupo-info" style="font-size:12px;font-weight:700;color:var(--sub);margin-bottom:12px"></div>
+
+        <div class="frow">
+          <div class="fgrp">
+            <div class="flbl">Mes</div>
+            <div class="fsel-wrap"><select class="fsel" id="gm-mes">
+              <option value="0">Enero</option><option value="1">Febrero</option>
+              <option value="2">Marzo</option><option value="3">Abril</option>
+              <option value="4">Mayo</option><option value="5">Junio</option>
+              <option value="6">Julio</option><option value="7">Agosto</option>
+              <option value="8">Septiembre</option><option value="9">Octubre</option>
+              <option value="10">Noviembre</option><option value="11">Diciembre</option>
+            </select></div>
+          </div>
+          <div class="fgrp">
+            <div class="flbl">Año</div>
+            <div class="fsel-wrap"><select class="fsel" id="gm-anio"></select></div>
+          </div>
+        </div>
+
+        <!-- Preview -->
+        <div id="gm-preview" style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:10px 12px;font-size:12px;font-weight:700;color:#15803d;margin-bottom:12px;display:none"></div>
+        <div id="gm-warn" style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:10px 12px;font-size:12px;font-weight:700;color:#92400e;margin-bottom:12px;display:none"></div>
+
+        <div class="sheet-btns">
+          <button class="sbtn" onclick="closeSheet('sh-generar-mes')">Cancelar</button>
+          <button class="sbtn prim" id="gm-btn-confirmar" onclick="confirmarGenerarMes()">📅 Generar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirmación  <!-- Confirmación -->
+  <div class="confirm-overlay" id="confirm-overlay">
+    <div class="confirm-box">
+      <div class="confirm-titulo">¿Eliminar grupo?</div>
+      <div class="confirm-texto" id="confirm-texto"></div>
+      <div class="confirm-btns">
+        <button class="cbtn" onclick="document.getElementById('confirm-overlay').classList.remove('open')">Cancelar</button>
+        <button class="cbtn danger" id="confirm-ok">Eliminar</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+
+  <!-- Sheet info página -->
+  <div class="overlay" id="sh-info-pagina">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">Grupos</div>
+      <div style="font-size:14px;font-weight:600;color:var(--sub);line-height:1.65;padding-bottom:8px">Un grupo define el "contrato" completo de una clase fija: alumnos, horario, pista, monitor e importe mensual. Al crear una clase de ese grupo, la pista y el horario se rellenan solos.</div>
+      <div class="sheet-btns">
+        <button class="sbtn prim" style="flex:1" onclick="closeSheet('sh-info-pagina')">Entendido</button>
+      </div>
+    </div>
+  </div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/store.js"></script>
+<script src="js/ui.js"></script>
+<script>
+
+let _grupos       = [];
+let _filtroNivel  = '';
+let _alumnosGrupo = {};
+let _cfgPistas    = [];
+let _cfgMonitores = [];
+let _cfgNiveles   = ['Principiante', 'Intermedio', 'Avanzado'];
+
+// ── Hora picker custom ─────────────────────────
+const _hpick = {
+  'ini-h': { val: 10, opts: Array.from({length:24}, (_,i) => i),       step: 1 },
+  'ini-m': { val: 0,  opts: Array.from({length:12}, (_,i) => i * 5),   step: 5 },
+  'fin-h': { val: 11, opts: Array.from({length:24}, (_,i) => i),       step: 1 },
+  'fin-m': { val: 30, opts: Array.from({length:12}, (_,i) => i * 5),   step: 5 },
+};
+
+function _hpickRender(id) {
+  const el = document.getElementById(id + '-val');
+  if (el) el.innerHTML = String(_hpick[id].val).padStart(2, '0') + '<span class="hpick-val-arrow">∨</span>';
+}
+
+function hpickStep(id, dir) {
+  const cfg = _hpick[id];
+  const idx = cfg.opts.indexOf(cfg.val);
+  cfg.val = cfg.opts[(idx + dir + cfg.opts.length) % cfg.opts.length];
+  _hpickRender(id);
+  // Actualizar sel si el drop está abierto
+  const drop = document.getElementById(id + '-drop');
+  if (drop && drop.classList.contains('open')) {
+    drop.querySelectorAll('.hpick-opt').forEach(o =>
+      o.classList.toggle('sel', Number(o.dataset.v) === cfg.val));
+  }
+}
+
+function hpickToggle(id) {
+  const drop = document.getElementById(id + '-drop');
+  const box  = document.getElementById(id + '-box');
+  const isOpen = drop.classList.contains('open');
+  // Cerrar todos
+  document.querySelectorAll('.hpick-drop').forEach(d => d.classList.remove('open'));
+  document.querySelectorAll('.hpick-box').forEach(b => b.classList.remove('open'));
+  if (!isOpen) {
+    const cfg = _hpick[id];
+    drop.innerHTML = cfg.opts.map(v =>
+      `<div class="hpick-opt${v === cfg.val ? ' sel' : ''}" data-v="${v}"
+           onclick="hpickPick('${id}',${v})">${String(v).padStart(2,'0')}</div>`
+    ).join('');
+    drop.classList.add('open');
+    box.classList.add('open');
+    setTimeout(() => {
+      const sel = drop.querySelector('.sel');
+      if (sel) sel.scrollIntoView({ block: 'center' });
+    }, 20);
+  }
+}
+
+function hpickPick(id, val) {
+  _hpick[id].val = val;
+  _hpickRender(id);
+  document.getElementById(id + '-drop').classList.remove('open');
+  document.getElementById(id + '-box').classList.remove('open');
+}
+
+function buildHoraPickers() { /* no-op */ }
+
+function getHora(prefijo) {
+  const mapId = prefijo === 'gr-inicio' ? 'ini' : 'fin';
+  return String(_hpick[mapId+'-h'].val).padStart(2,'0') + ':' + String(_hpick[mapId+'-m'].val).padStart(2,'0');
+}
+
+function setHora(prefijo, horaStr) {
+  const mapId = prefijo === 'gr-inicio' ? 'ini' : 'fin';
+  if (!horaStr) return;
+  const [h, m] = horaStr.split(':').map(Number);
+  _hpick[mapId+'-h'].val = isNaN(h) ? (mapId==='ini' ? 10 : 11) : Math.min(23, Math.max(0, h));
+  _hpick[mapId+'-m'].val = isNaN(m) ? 0 : Math.round(m / 5) * 5 % 60;
+  _hpickRender(mapId+'-h');
+  _hpickRender(mapId+'-m');
+}
+
+// Cerrar dropdowns hora al pulsar fuera
+document.addEventListener('click', e => {
+  if (!e.target.closest('.hpick-wrap')) {
+    document.querySelectorAll('.hpick-drop').forEach(d => d.classList.remove('open'));
+    document.querySelectorAll('.hpick-box').forEach(b => b.classList.remove('open'));
+  }
+});
+
+// ── Días chips ────────────────────────────────
+function toggleDia(el) {
+  el.classList.toggle('activo');
+}
+
+function getDias() {
+  return [...document.querySelectorAll('#gr-dias-grid .dia-chip.activo')]
+    .map(el => el.dataset.dia).join(' / ');
+}
+
+function setDias(diasStr) {
+  document.querySelectorAll('#gr-dias-grid .dia-chip').forEach(el => {
+    el.classList.remove('activo');
+  });
+  if (!diasStr) return;
+  const activos = diasStr.split(/[/,;]+/).map(d => d.trim().toLowerCase());
+  document.querySelectorAll('#gr-dias-grid .dia-chip').forEach(el => {
+    if (activos.some(d => el.dataset.dia.toLowerCase().startsWith(d.slice(0,2)))) {
+      el.classList.add('activo');
+    }
+  });
+}
+
+// ── Selectores custom (csel) ───────────────────
+function renderGrupoSelectores(nivelAct, pistaAct, monitorAct) {
+  const saveLista = (clave, lista) => saveConfig(clave, lista).catch(console.error);
+
+  cselRender('gr-nivel-csel', _cfgNiveles, nivelAct || _cfgNiveles[0] || '',
+    null, null,
+    (val, lista) => { _cfgNiveles = lista; saveLista('niveles', lista); actualizarFiltroNivel(); },
+    (val, lista) => { _cfgNiveles = lista; saveLista('niveles', lista); actualizarFiltroNivel(); },
+    '+ Añadir nivel…');
+
+  cselRender('gr-pista-csel', ['— Sin pista —', ..._cfgPistas], pistaAct || '— Sin pista —',
+    '— Sin pista —', null,
+    (val, lista) => { _cfgPistas = lista.filter(v=>v!=='— Sin pista —'); saveLista('pistas', _cfgPistas); actualizarFiltroPista(); },
+    (val, lista) => { _cfgPistas = lista.filter(v=>v!=='— Sin pista —'); saveLista('pistas', _cfgPistas); actualizarFiltroPista(); },
+    '+ Añadir pista…');
+
+  cselRender('gr-monitor-csel', ['— Sin monitor —', ..._cfgMonitores], monitorAct || '— Sin monitor —',
+    '— Sin monitor —', null,
+    (val, lista) => { _cfgMonitores = lista.filter(v=>v!=='— Sin monitor —'); saveLista('monitores', _cfgMonitores); actualizarFiltroMonitor(); },
+    (val, lista) => { _cfgMonitores = lista.filter(v=>v!=='— Sin monitor —'); saveLista('monitores', _cfgMonitores); actualizarFiltroMonitor(); },
+    '+ Añadir monitor…');
+}
+
+function actualizarFiltroNivel() {
+  const fn = document.getElementById('filtro-nivel');
+  if (!fn) return;
+  const c = fn.value;
+  fn.innerHTML = '<option value="">Todos</option>' + _cfgNiveles.map(v=>`<option value="${v}">${v}</option>`).join('');
+  if (c) fn.value = c;
+}
+function actualizarFiltroPista() {
+  const fp = document.getElementById('filtro-pista');
+  if (!fp) return;
+  const c = fp.value;
+  fp.innerHTML = '<option value="">Todas</option>' + _cfgPistas.map(v=>`<option value="${v}">${v}</option>`).join('');
+  if (c) fp.value = c;
+}
+function actualizarFiltroMonitor() {
+  const fm = document.getElementById('filtro-monitor');
+  if (!fm) return;
+  const c = fm.value;
+  fm.innerHTML = '<option value="">Todos</option>' + _cfgMonitores.map(v=>`<option value="${v}">${v}</option>`).join('');
+  if (c) fm.value = c;
+}
+
+function fillDropdowns() {
+  actualizarFiltroNivel();
+  actualizarFiltroPista();
+  actualizarFiltroMonitor();
+}
+
+// ── Filtros ────────────────────────────────────
+function filtrar() {
+  const q           = (document.getElementById('buscador')?.value || '').toLowerCase().trim();
+  const filtNivel   = document.getElementById('filtro-nivel')?.value   || '';
+  const filtPista   = document.getElementById('filtro-pista')?.value   || '';
+  const filtMonitor = document.getElementById('filtro-monitor')?.value || '';
+
+  const lista = _grupos
+    .filter(g => {
+      if (filtNivel   && g.nivel   !== filtNivel)   return false;
+      if (filtPista   && g.pista   !== filtPista)   return false;
+      if (filtMonitor && g.monitor !== filtMonitor) return false;
+      if (!q) return true;
+      const hay = [g.nombre, g.nivel, g.pista, g.monitor, g.dias].filter(Boolean).join(' ').toLowerCase();
+      return !q || q.split(/\s+/).filter(Boolean).some(p => hay.includes(p));
+    })
+    .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+  renderLista(lista);
+}
+
+// ── Avatar ─────────────────────────────────────
+const COLORES = ['#2563eb','#16a34a','#f59e0b','#e05a5a','#7c3aed','#0891b2'];
+function colorGrupo(nombre) {
+  let h = 0;
+  for (let c of nombre) h = c.charCodeAt(0) + ((h<<5)-h);
+  return COLORES[Math.abs(h) % COLORES.length];
+}
+function abrev(nombre) {
+  const partes = nombre.trim().split(' ');
+  if (partes.length >= 2) return (partes[0][0] + partes[1][0]).toUpperCase();
+  return nombre.slice(0,2).toUpperCase();
+}
+
+// ── Render alumnos ─────────────────────────────
+function renderAlumnos(grupoId) {
+  const als = _alumnosGrupo[grupoId] || [];
+  if (!als.length) return '<div style="font-size:11px;color:var(--sutil);padding:4px 0">Sin alumnos asignados</div>';
+  return als.map(a => {
+    const avEl = a.foto_url
+      ? `<img src="${a.foto_url}" style="width:28px;height:28px;border-radius:8px;object-fit:cover;flex-shrink:0" onerror="this.style.display='none'">`
+      : `<div class="av-sm" style="background:${colorAvatar(a.nombre)}">${iniciales(a.nombre)}</div>`;
+    return `
+    <div class="al-fila">
+      ${avEl}
+      <div class="al-nombre">${a.nombre}</div>
+      ${chipNivel(a.nivel)}
+    </div>`;
+  }).join('');
+}
+
+// ── Render lista ───────────────────────────────
+function renderLista(grupos) {
+  document.getElementById('contador').textContent = grupos.length;
+  const el = document.getElementById('lista-grupos');
+  if (!grupos.length) { showEmpty('lista-grupos', 'Sin grupos'); return; }
+
+  el.innerHTML = grupos.map(g => {
+    const color    = colorGrupo(g.nombre);
+    const horario  = g.hora_inicio ? `${g.hora_inicio.slice(0,5)}–${(g.hora_fin||'').slice(0,5)}` : '';
+    const metaParts = [
+      g.hora_inicio ? `🕐 ${horario}` : null,
+    ].filter(Boolean).join(' · ');
+
+    const alumnos  = _alumnosGrupo[g.id] || [];
+    const nAlumnos = alumnos.length;
+    const maxAl    = g.max_alumnos || 0;
+    const lleno    = maxAl > 0 && nAlumnos >= maxAl;
+    const casiLleno= maxAl > 0 && nAlumnos >= maxAl - 1 && !lleno;
+    const chipCupo = maxAl > 0
+      ? lleno
+        ? `<span class="chip" style="background:#fee2e2;color:#b91c1c">🔴 Lleno ${nAlumnos}/${maxAl}</span>`
+        : casiLleno
+          ? `<span class="chip" style="background:#fef9c3;color:#92400e">🟡 Casi lleno ${nAlumnos}/${maxAl}</span>`
+          : `<span class="chip" style="background:#dcfce7;color:#15803d">🟢 ${maxAl - nAlumnos} plaza${maxAl-nAlumnos!==1?'s':''} libre${maxAl-nAlumnos!==1?'s':''}</span>`
+      : '';
+
+    return `
+    <div class="card" id="card-${g.id}" style="border-left-color:${color}">
+      <div class="card-main" onclick="toggleCard('${g.id}')">
+        <div class="av sq" style="background:${color}">${abrev(g.nombre)}</div>
+        <div class="ci">
+          <div class="cn">${g.nombre}</div>
+          <div class="cm" style="display:flex;flex-wrap:wrap;gap:4px;margin-top:3px;align-items:center">
+            ${chipNivel(g.nivel)}
+            ${g.pista   ? chipPista(g.pista)     : ''}
+            ${g.monitor ? chipMonitor(g.monitor)  : ''}
+            ${chipCupo}
+          </div>
+          <div class="cm" style="font-size:11px;color:var(--sutil);font-weight:600;margin-top:2px">
+            ${nAlumnos} alumno${nAlumnos!==1?'s':''}${horario ? ' · '+horario : ''}${g.dias ? ' · '+g.dias : ''}
+          </div>
+        </div>
+        <div class="chev" id="chev-${g.id}">▼</div>
+      </div>
+      <div class="exp" id="exp-${g.id}">
+        <div class="als-lbl">👥 Alumnos (${nAlumnos})</div>
+        ${renderAlumnos(g.id)}
+        ${g.importe_mensual > 0 ? `<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:9px;padding:8px 11px;font-size:12px;font-weight:800;color:#1e40af;margin-bottom:8px">💶 Cuota mensual: <strong>${(+g.importe_mensual).toFixed(2)} €</strong></div>` : ''}
+        <div class="abtns">
+          ${g.dias && g.hora_inicio ? `<button class="abtn" style="border-color:#16a34a;color:#16a34a" onclick="abrirGenerarMes(${JSON.stringify(g).replace(/"/g,'&quot;')})"><img src="icons/clases.png" style="width:15px;height:15px;object-fit:contain;vertical-align:middle;margin-right:3px">Generar mes</button>` : ''}
+          <button class="abtn prim" onclick="abrirEditar(${JSON.stringify(g).replace(/"/g,'&quot;')})">✏️ Editar</button>
+          <button class="abtn dang" onclick="confirmarEliminar('${g.id}','${g.nombre.replace(/'/g,"\\'")}')">🗑 Eliminar</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Abrir nuevo / editar ───────────────────────
+function abrirNuevo() {
+  document.getElementById('sh-titulo').textContent = 'Nuevo grupo';
+  document.getElementById('gr-id').value     = '';
+  document.getElementById('gr-nombre').value = '';
+  setDias('');
+  document.getElementById('gr-importe').value = '0';
+  document.getElementById('gr-max-alumnos').value = '0';
+  setHora('ini', '10:00');
+  document.getElementById('gr-duracion').value = '60';
+  nselSync('gr-duracion');
+  renderGrupoSelectores(_cfgNiveles[0] || '', '— Sin pista —', '— Sin monitor —');
+  openSheet('sh-grupo');
+}
+
+function abrirEditar(g) {
+  document.getElementById('sh-titulo').textContent = 'Editar grupo';
+  document.getElementById('gr-id').value      = g.id;
+  document.getElementById('gr-nombre').value  = g.nombre;
+  setDias(g.dias || '');
+  document.getElementById('gr-importe').value      = g.importe_mensual != null ? g.importe_mensual : '0';
+  document.getElementById('gr-max-alumnos').value  = g.max_alumnos    != null ? g.max_alumnos    : '0';
+  setHora('ini', g.hora_inicio || '10:00');
+  // Calcular duración desde hora_inicio y hora_fin
+  if (g.hora_inicio && g.hora_fin) {
+    const [hi, mi] = g.hora_inicio.split(':').map(Number);
+    const [hf, mf] = g.hora_fin.split(':').map(Number);
+    const dur = (hf * 60 + mf) - (hi * 60 + mi);
+    document.getElementById('gr-duracion').value = String(dur > 0 ? dur : 60);
+  } else {
+    document.getElementById('gr-duracion').value = String(g.duracion || 60);
+  }
+  nselSync('gr-duracion');
+  renderGrupoSelectores(
+    g.nivel   || _cfgNiveles[0] || '',
+    g.pista   || '— Sin pista —',
+    g.monitor || '— Sin monitor —'
+  );
+  openSheet('sh-grupo');
+}
+
+// ── Guardar grupo ──────────────────────────────
+async function guardar() {
+  const nombre = document.getElementById('gr-nombre').value.trim();
+  if (!nombre) { toast('Escribe el nombre del grupo', 'warn'); return; }
+  const grupo = {
+    id:               document.getElementById('gr-id').value || undefined,
+    nombre,
+    nivel:            cselGetValue('gr-nivel-csel'),
+    dias:             getDias(),
+    hora_inicio:      getHora('gr-inicio'),
+    hora_fin:         (()=>{
+      const ini = getHora('gr-inicio');
+      const dur = parseInt(document.getElementById('gr-duracion').value) || 60;
+      const [h,m] = ini.split(':').map(Number);
+      const total = h*60 + m + dur;
+      return String(Math.floor(total/60)).padStart(2,'0') + ':' + String(total%60).padStart(2,'0');
+    })(),
+    duracion:         parseInt(document.getElementById('gr-duracion').value) || 60,
+    pista:            (() => { const v = cselGetValue('gr-pista-csel'); return v === '— Sin pista —' ? '' : v; })(),
+    monitor:          (() => { const v = cselGetValue('gr-monitor-csel'); return v === '— Sin monitor —' ? '' : v; })(),
+    importe_mensual:  parseFloat(document.getElementById('gr-importe').value) || 0,
+    max_alumnos:      parseInt(document.getElementById('gr-max-alumnos').value)  || 0,
+  };
+  try {
+    await saveGrupo(grupo);
+    closeSheet('sh-grupo');
+    toast('Grupo guardado', 'ok');
+    await cargar();
+  } catch(e) { toast('Error al guardar', 'err'); console.error(e); }
+}
+
+// ── Eliminar ───────────────────────────────────
+function confirmarEliminar(id, nombre) {
+  document.getElementById('confirm-texto').textContent = `¿Eliminar "${nombre}"?`;
+  document.getElementById('confirm-overlay').classList.add('open');
+  document.getElementById('confirm-ok').onclick = async () => {
+    document.getElementById('confirm-overlay').classList.remove('open');
+    try { await deleteGrupo(id); toast('Grupo eliminado', 'ok'); await cargar(); }
+    catch(e) { toast('Error al eliminar', 'err'); }
+  };
+}
+
+// ── Config pistas / monitores ──────────────────
+async function abrirConfig() {
+  // Renderizar chips actuales
+  renderCfgChips('pistas',   _cfgPistas);
+  renderCfgChips('monitores', _cfgMonitores);
+  openSheet('sh-config');
+}
+
+function renderCfgChips(clave, lista) {
+  const wrap = document.getElementById('cfg-chips-' + clave);
+  wrap.innerHTML = '';
+  (lista || []).forEach(item => _addChipToWrap(wrap, item));
+}
+
+function _addChipToWrap(wrap, val) {
+  const chip = document.createElement('div');
+  chip.className   = 'cfg-chip';
+  chip.dataset.val = val;
+  const span = document.createElement('span');
+  span.textContent = val;
+  const btn = document.createElement('button');
+  btn.className   = 'cfg-chip-x';
+  btn.textContent = '×';
+  btn.type        = 'button';
+  btn.onclick     = () => chip.remove();
+  chip.appendChild(span);
+  chip.appendChild(btn);
+  wrap.appendChild(chip);
+}
+
+function addCfgChip(clave) {
+  const inp  = document.getElementById('cfg-inp-' + clave);
+  if (!inp) return;
+  const val  = inp.value.trim();
+  if (!val) { inp.focus(); return; }
+  const wrap = document.getElementById('cfg-chips-' + clave);
+  const existe = [...wrap.querySelectorAll('.cfg-chip')].some(c => c.dataset.val === val);
+  if (existe) { toast('Ya existe', 'warn'); inp.select(); return; }
+  _addChipToWrap(wrap, val);
+  inp.value = '';
+  inp.focus();
+}
+
+async function guardarConfig() {
+  const pistas    = [...document.querySelectorAll('#cfg-chips-pistas .cfg-chip')].map(c => c.dataset.val);
+  const monitores = [...document.querySelectorAll('#cfg-chips-monitores .cfg-chip')].map(c => c.dataset.val);
+  try {
+    await Promise.all([
+      saveConfig('pistas',    pistas),
+      saveConfig('monitores', monitores),
+    ]);
+    _cfgPistas    = pistas;
+    _cfgMonitores = monitores;
+    fillDropdowns();
+    closeSheet('sh-config');
+    toast('✓ Configuración guardada', 'ok');
+  } catch(e) { toast('Error al guardar', 'err'); console.error(e); }
+}
+
+// ── Cargar ─────────────────────────────────────
+async function cargar() {
+  showLoading('lista-grupos');
+  const [grupos, todosAlumnos] = await Promise.all([
+    getGrupos(),
+    getAlumnos(),
+  ]);
+  _grupos = grupos;
+  // Agrupar alumnos por grupo_id
+  _alumnosGrupo = {};
+  _grupos.forEach(g => _alumnosGrupo[g.id] = []);
+  todosAlumnos.forEach(a => {
+    if (a.grupo_id && _alumnosGrupo[a.grupo_id]) {
+      _alumnosGrupo[a.grupo_id].push(a);
+    }
+  });
+  filtrar();
+}
+
+// ── Generar mes de clases ──────────────────────
+let _gmGrupo = null;
+
+function abrirGenerarMes(g) {
+  _gmGrupo = g;
+  const hoy = new Date();
+
+  // Info del grupo
+  const pista = g.pista && g.pista !== '— Sin pista —' ? g.pista : null;
+  const hora = g.hora_inicio ? g.hora_inicio.slice(0,5) : '—';
+  const horaFin = g.hora_fin ? g.hora_fin.slice(0,5) : '—';
+  document.getElementById('gm-grupo-info').innerHTML =
+    `<strong>${g.nombre}</strong> · ${g.dias} · ${hora}–${horaFin}` +
+    (pista ? ` · ${pista}` : ' · <span style="color:#e05a5a">Sin pista asignada</span>');
+
+  // Poblar año
+  const selAnio = document.getElementById('gm-anio');
+  selAnio.innerHTML = '';
+  for (let y = hoy.getFullYear(); y <= hoy.getFullYear() + 2; y++) {
+    const o = document.createElement('option');
+    o.value = y; o.textContent = y;
+    if (y === hoy.getFullYear()) o.selected = true;
+    selAnio.appendChild(o);
+  }
+  document.getElementById('gm-mes').value = hoy.getMonth();
+
+  // Avisos
+  document.getElementById('gm-warn').style.display = pista ? 'none' : 'block';
+  document.getElementById('gm-warn').textContent = '⚠️ El grupo no tiene pista asignada. Se generarán las clases sin reserva de pista.';
+
+  nselInit('gm-mes'); nselSync('gm-mes');
+  nselInit('gm-anio'); nselSync('gm-anio');
+
+  // Preview inicial
+  actualizarPreviewGm();
+
+  // Actualizar preview al cambiar mes/año
+  document.getElementById('gm-mes').onchange = actualizarPreviewGm;
+  document.getElementById('gm-anio').onchange = actualizarPreviewGm;
+
+  openSheet('sh-generar-mes');
+}
+
+function _diasGrupoANumeros(diasStr) {
+  // "Lun / Mié / Vie" → [1, 3, 5] (0=Dom, 1=Lun … 6=Sáb)
+  const MAP = { lun:1, mar:2, mié:3, mie:3, jue:4, vie:5, sáb:6, sab:6, dom:0 };
+  return diasStr.split(/[/,;]+/)
+    .map(d => MAP[d.trim().toLowerCase().slice(0,3)])
+    .filter(n => n !== undefined);
+}
+
+function _fechasDelMes(mes, anio, diasNums) {
+  const fechas = [];
+  const d = new Date(anio, mes, 1);
+  while (d.getMonth() === mes) {
+    if (diasNums.includes(d.getDay())) {
+      // Formatear en local para evitar desfase UTC (toISOString da el dia anterior en UTC+1/+2)
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      fechas.push(yyyy+'-'+mm+'-'+dd);
+    }
+    d.setDate(d.getDate() + 1);
+  }
+  return fechas;
+}
+
+function actualizarPreviewGm() {
+  if (!_gmGrupo) return;
+  const mes = +document.getElementById('gm-mes').value;
+  const anio = +document.getElementById('gm-anio').value;
+  const diasNums = _diasGrupoANumeros(_gmGrupo.dias || '');
+  const fechas = _fechasDelMes(mes, anio, diasNums);
+  const prev = document.getElementById('gm-preview');
+  const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  prev.textContent = `✓ Se generarán ${fechas.length} clases en ${MESES[mes]} ${anio}`;
+  prev.style.display = fechas.length ? 'block' : 'none';
+}
+
+async function confirmarGenerarMes() {
+  if (!_gmGrupo) return;
+  const g = _gmGrupo;
+  const mes = +document.getElementById('gm-mes').value;
+  const anio = +document.getElementById('gm-anio').value;
+  const diasNums = _diasGrupoANumeros(g.dias || '');
+  const fechas = _fechasDelMes(mes, anio, diasNums);
+  if (!fechas.length) { toast('No hay días que generar','warn'); return; }
+
+  const btn = document.getElementById('gm-btn-confirmar');
+  btn.disabled = true; btn.textContent = 'Generando…';
+
+  const pista = g.pista && g.pista !== '— Sin pista —' ? g.pista : null;
+  const duracion = g.duracion || (g.hora_inicio && g.hora_fin
+    ? Math.round((new Date('1970-01-01T'+g.hora_fin) - new Date('1970-01-01T'+g.hora_inicio)) / 60000)
+    : 60);
+  const colorMap = ['azul','verde','naranja','morado','rojo','gris'];
+  const pistaIdx = pista ? (['Pista 1','Pista 2','Pista 3','Pista 4','Pista 5','Pista 6'].indexOf(pista)) : -1;
+  const bloqueColor = pistaIdx >= 0 ? colorMap[pistaIdx] : 'azul';
+
+  let creadas = 0, omitidas = 0, errores = 0;
+
+  for (const fechaStr of fechas) {
+    // fechaStr es "YYYY-MM-DD" en hora local (sin riesgo de desfase UTC)
+    try {
+      // Anti-duplicado: comprobar si ya existe clase para este grupo+fecha
+      const { data: existe } = await _sb.from('clases')
+        .select('id').eq('escuela_id', Store.escuelaId)
+        .eq('grupo_id', g.id).eq('fecha', fechaStr).maybeSingle();
+      if (existe) { omitidas++; continue; }
+
+      // Crear clase
+      const { data: claseData, error: ce } = await _sb.from('clases').insert({
+        escuela_id: Store.escuelaId,
+        grupo_id: g.id,
+        fecha: fechaStr,
+        hora: g.hora_inicio || '10:00:00',
+        estado: 'Programada',
+        tipo_clase: 'Grupo',
+        duracion,
+        pista: pista || null,
+      }).select().single();
+      if (ce) throw ce;
+      creadas++;
+
+      // Reservar pista (error no bloquea la clase ya creada)
+      if (pista) {
+        try {
+          let semana = await getSemanaParaFecha(fechaStr);
+          if (!semana) {
+            // Calcular lunes de la semana sin new Date (evita UTC)
+            const [fy, fm, fd] = fechaStr.split('-').map(Number);
+            const tmp = new Date(fy, fm-1, fd);
+            const diaJSTmp = tmp.getDay();
+            const lunesTmp = new Date(fy, fm-1, fd - (diaJSTmp === 0 ? 6 : diaJSTmp - 1));
+            const domingoTmp = new Date(lunesTmp); domingoTmp.setDate(lunesTmp.getDate() + 6);
+            const pad = n => String(n).padStart(2,'0');
+            semana = await saveSemana({
+              fecha_inicio: lunesTmp.getFullYear()+'-'+pad(lunesTmp.getMonth()+1)+'-'+pad(lunesTmp.getDate()),
+              fecha_fin: domingoTmp.getFullYear()+'-'+pad(domingoTmp.getMonth()+1)+'-'+pad(domingoTmp.getDate()),
+              num_pistas: Math.max(3, (_cfgPistas||[]).length),
+            });
+          }
+          const [fy2, fm2, fd2] = fechaStr.split('-').map(Number);
+          const tmpD = new Date(fy2, fm2-1, fd2);
+          const diaJS = tmpD.getDay();
+          const diaConv = diaJS === 0 ? 6 : diaJS - 1;
+          await _sb.from('bloques_pista').insert({
+            semana_id: semana.id,
+            dia: String(diaConv),
+            pista,
+            hora_inicio: g.hora_inicio || '10:00:00',
+            hora_fin: g.hora_fin || '11:00:00',
+            tipo: 'Clase',
+            grupo_id: g.id,
+            monitor: g.monitor || null,
+            actividad: g.nombre,
+            clase_id: claseData.id,
+            color: bloqueColor,
+          });
+        } catch(ep) {
+          console.warn('Error creando bloque pista para', fechaStr, ep);
+        }
+      }
+    } catch(e) {
+      errores++;
+      console.error('Error generando', fechaStr, e);
+    }
+  }
+
+  btn.disabled = false; btn.textContent = 'Generar';
+  closeSheet('sh-generar-mes');
+
+  if (omitidas > 0 && creadas === 0) toast(`Ya existían las ${omitidas} clases de este mes`, 'warn');
+  else if (omitidas > 0) toast(`${creadas} clases generadas · ${omitidas} ya existían`, 'ok');
+  else if (errores === 0) toast(`${creadas} clases generadas ✓`, 'ok');
+  else toast(`${creadas} generadas, ${errores} errores`, 'warn');
+}
+
+// ── Init ───────────────────────────────────────
+async function init() {
+  buildHoraPickers();
+  renderNav('grupos');
+  await initStore();
+  renderHeader({
+    titulo: 'Escuela de Pádel', subtitulo: 'Grupos',
+    icono: 'icons/grupos.png', botonDerecho: 'menu',
+    
+  });
+
+  // Cargar config y grupos en paralelo
+  const [cfg] = await Promise.all([
+    getConfigMultiple(['pistas','monitores','niveles']),
+    cargar(),
+  ]);
+  _cfgPistas    = cfg.pistas    || [];
+  _cfgMonitores = cfg.monitores || [];
+  if (cfg.niveles && cfg.niveles.length) _cfgNiveles = cfg.niveles;
+  chipRegistrarLista('pistas',    _cfgPistas);
+  chipRegistrarLista('monitores', _cfgMonitores);
+  chipRegistrarLista('niveles',   _cfgNiveles);
+  fillDropdowns();
+
+  // ── Inicializar selects custom ──
+  nselInit('filtro-nivel');
+  nselInit('filtro-pista');
+  nselInit('filtro-monitor');
+  nselInit('gr-duracion');
+}
+
+function abrirInfo() {
+  openSheet('sh-info-pagina');
+}
+
+init();
+</script>
+</body>
+</html>

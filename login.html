@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>Escuela de Pádel — Acceder</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .terms-row {
+      display: flex; align-items: flex-start; gap: 10px;
+      margin-bottom: 14px; padding: 10px 12px;
+      background: #f0f9ff; border: 1.5px solid #bfdbfe; border-radius: 10px;
+    }
+    .terms-row input[type="checkbox"] {
+      width: 18px; height: 18px; flex-shrink: 0;
+      margin-top: 2px; accent-color: #2563eb; cursor: pointer;
+    }
+    .terms-row label { font-size: 12px; font-weight: 600; color: #475569; line-height: 1.5; cursor: pointer; }
+    .terms-row label a { color: #2563eb; font-weight: 800; text-decoration: none; }
+    .terms-row label a:hover { text-decoration: underline; }
+    .legal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(15,23,42,.6); z-index: 500;
+      align-items: flex-end; justify-content: center;
+    }
+    .legal-overlay.open { display: flex; }
+    .legal-sheet {
+      background: var(--fondo); border-radius: 22px 22px 0 0;
+      width: 100%; max-width: 480px; max-height: 88vh; overflow-y: auto; padding: 0 0 28px;
+    }
+    .legal-hdr {
+      position: sticky; top: 0; background: var(--card);
+      border-radius: 22px 22px 0 0; padding: 14px 16px 12px;
+      border-bottom: 1.5px solid var(--borde); z-index: 10;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .legal-hdr-titulo { flex: 1; font-size: 15px; font-weight: 900; color: var(--texto); }
+    .legal-hdr-close {
+      width: 30px; height: 30px; background: #f1f5f9; border: none;
+      border-radius: 8px; font-size: 16px; font-weight: 900;
+      color: var(--sub); cursor: pointer; display: flex; align-items: center; justify-content: center;
+    }
+    .legal-body { padding: 18px 18px 8px; }
+    .legal-h1 {
+      font-size: 13px; font-weight: 900; color: #1e3a8a;
+      text-transform: uppercase; letter-spacing: .5px;
+      margin: 22px 0 8px; padding-bottom: 6px;
+      border-bottom: 2px solid #bfdbfe;
+    }
+    .legal-h1:first-child { margin-top: 0; }
+    .legal-h2 { font-size: 12px; font-weight: 900; color: #2563eb; margin: 14px 0 5px; }
+    .legal-p { font-size: 12px; font-weight: 600; color: #475569; line-height: 1.65; margin-bottom: 8px; }
+    .legal-li { font-size: 12px; font-weight: 600; color: #475569; line-height: 1.65; margin-bottom: 4px; padding-left: 16px; position: relative; }
+    .legal-li::before { content: '•'; position: absolute; left: 4px; color: #2563eb; }
+    .legal-aceptar {
+      display: block; width: calc(100% - 36px); margin: 18px 18px 0;
+      padding: 13px; background: #2563eb; color: #fff; border: none;
+      border-radius: 12px; font-size: 14px; font-weight: 900;
+      cursor: pointer; font-family: Nunito, sans-serif;
+    }
+    .legal-aceptar:hover { background: #1d4ed8; }
+  </style>
+</head>
+<body>
+<div class="login-page">
+  <div class="login-card">
+    <div class="login-logo"><img src="icons/inicio.png" alt="Logo"></div>
+    <div class="login-title">Escuela de Pádel</div>
+    <div class="login-sub">Gestión para monitores</div>
+
+    <div class="login-tabs">
+      <div class="ltab active" id="tab-entrar"     onclick="switchTab('entrar')">Entrar</div>
+      <div class="ltab"        id="tab-registrarse" onclick="switchTab('registrarse')">Registrarse</div>
+    </div>
+
+    <!-- Entrar -->
+    <div id="form-entrar">
+      <div class="fgrp">
+        <div class="flbl">Email</div>
+        <input class="finp" type="email" id="login-email" placeholder="tu@email.com" autocomplete="email">
+      </div>
+      <div class="fgrp">
+        <div class="flbl">Contraseña</div>
+        <input class="finp" type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <div id="login-error" style="color:#e05a5a;font-size:12px;font-weight:700;margin-bottom:8px;display:none"></div>
+      <button class="btn-login" id="btn-entrar" onclick="doLogin()">Entrar →</button>
+    </div>
+
+    <!-- Registrarse -->
+    <div id="form-registrarse" style="display:none">
+      <div class="fgrp">
+        <div class="flbl">Nombre de tu escuela</div>
+        <input class="finp" type="text" id="reg-escuela" placeholder="Ej: Club Pádel Sevilla">
+      </div>
+      <div class="fgrp">
+        <div class="flbl">Email</div>
+        <input class="finp" type="email" id="reg-email" placeholder="tu@email.com" autocomplete="email">
+      </div>
+      <div class="fgrp">
+        <div class="flbl">Contraseña</div>
+        <input class="finp" type="password" id="reg-pass" placeholder="Mínimo 8 caracteres" autocomplete="new-password">
+      </div>
+
+      <!-- Casilla términos -->
+      <div class="terms-row">
+        <input type="checkbox" id="reg-terms" onchange="onTermsChange()">
+        <label for="reg-terms">
+          He leído y acepto los
+          <a href="#" onclick="abrirTerminos(event)">Términos y Condiciones</a>,
+          la <a href="#" onclick="abrirTerminos(event)">Política de Privacidad</a>
+          y el <a href="#" onclick="abrirTerminos(event)">Contrato de Encargo de Tratamiento (DPA)</a>.
+          Confirmo que soy el responsable del tratamiento de los datos de mis alumnos
+          y que he obtenido las bases jurídicas necesarias para su recogida.
+        </label>
+      </div>
+
+      <div id="reg-error" style="color:#e05a5a;font-size:12px;font-weight:700;margin-bottom:8px;display:none"></div>
+      <button class="btn-login" id="btn-registrarse" onclick="doRegistro()" disabled
+        style="opacity:.45;cursor:not-allowed">Crear cuenta →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Overlay texto legal -->
+<div class="legal-overlay" id="legal-overlay" onclick="cerrarTerminosOverlay(event)">
+  <div class="legal-sheet" onclick="event.stopPropagation()">
+    <div class="legal-hdr">
+      <div class="legal-hdr-titulo">Términos y Condiciones · Privacidad · DPA</div>
+      <button class="legal-hdr-close" onclick="document.getElementById('legal-overlay').classList.remove('open')">✕</button>
+    </div>
+    <div class="legal-body">
+
+      <div class="legal-h1">A. Términos y Condiciones de Uso</div>
+
+      <div class="legal-h2">1. Prestador del servicio</div>
+      <p class="legal-p"><strong>Escuela de Pádel</strong> es una aplicación web progresiva (PWA) de gestión deportiva para monitores y escuelas de pádel. Contacto legal: <strong>legal@escuelapadel.app</strong>.</p>
+
+      <div class="legal-h2">2. Objeto del servicio</div>
+      <p class="legal-p">La aplicación permite gestionar alumnos, grupos, clases, cobros, torneos y estadísticas. El acceso implica la aceptación plena de estos Términos, la Política de Privacidad y el DPA.</p>
+
+      <div class="legal-h2">3. Registro y cuenta</div>
+      <p class="legal-p">El usuario se compromete a proporcionar información veraz, mantener la confidencialidad de sus credenciales y no ceder su cuenta a terceros. El proveedor puede suspender cuentas que incumplan estos Términos.</p>
+
+      <div class="legal-h2">4. Propiedad intelectual</div>
+      <p class="legal-p">El software y diseño son propiedad del proveedor. El usuario conserva todos los derechos sobre sus propios datos.</p>
+
+      <div class="legal-h2">5. Uso aceptable — prohibiciones</div>
+      <div class="legal-li">Actividades ilícitas o que vulneren derechos de terceros.</div>
+      <div class="legal-li">Introducir datos de menores sin habilitación legal y sin haber informado a sus representantes.</div>
+      <div class="legal-li">Almacenar datos de terceros sin base jurídica legítima conforme al RGPD.</div>
+      <div class="legal-li">Ingeniería inversa o acceso no autorizado al código fuente.</div>
+
+      <div class="legal-h2">6. Limitación de responsabilidad</div>
+      <p class="legal-p">El proveedor no responde del incumplimiento por el usuario de sus obligaciones como responsable del tratamiento de datos de sus alumnos, ni de daños indirectos derivados del uso del servicio. La responsabilidad máxima del proveedor se limita al importe abonado en los doce meses anteriores al evento causante.</p>
+
+      <div class="legal-h2">7. Modificaciones y cancelación</div>
+      <p class="legal-p">El proveedor notificará cambios sustanciales con 15 días de antelación. El usuario puede cancelar su cuenta en cualquier momento. Tras la cancelación, los datos de alumnos se eliminan en 30 días.</p>
+
+      <div class="legal-h2">8. Legislación y fuero</div>
+      <p class="legal-p">Estos Términos se rigen por la legislación española. Las partes se someten a los Juzgados y Tribunales de Sevilla.</p>
+
+      <div class="legal-h1">B. Política de Privacidad</div>
+
+      <div class="legal-h2">Datos del usuario-monitor que recogemos</div>
+      <div class="legal-li">Correo electrónico y contraseña (gestionados por Supabase Auth).</div>
+      <div class="legal-li">Nombre de escuela o monitor, si se proporciona voluntariamente.</div>
+      <div class="legal-li">Datos técnicos de uso: los logs del servicio pueden incluir direcciones IP, identificadores de sesión y eventos técnicos necesarios para garantizar la seguridad y el correcto funcionamiento. No se realiza seguimiento publicitario ni analítica de comportamiento.</div>
+
+      <div class="legal-h2">Finalidad y base jurídica</div>
+      <p class="legal-p">Tus datos se tratan para prestarte el servicio contratado (art. 6.1.b RGPD) y cumplir obligaciones legales (art. 6.1.c). Las comunicaciones relacionadas con el servicio (confirmaciones de cuenta, avisos técnicos, notificaciones de cambios) tienen como base jurídica la ejecución del contrato (art. 6.1.b). No se usan para publicidad ni se ceden a terceros con fines comerciales.</p>
+
+      <div class="legal-h2">Subencargados de tratamiento autorizados</div>
+      <div class="legal-li"><strong>Supabase Inc.</strong> (EE. UU.) — base de datos y autenticación, bajo cláusulas contractuales tipo CE.</div>
+      <div class="legal-li"><strong>GitHub Inc.</strong> (EE. UU.) — alojamiento del frontend, bajo garantías adecuadas.</div>
+
+      <div class="legal-h2">Transferencias internacionales</div>
+      <p class="legal-p">Los datos pueden transferirse a EE. UU. en el marco de los servicios de Supabase y GitHub, bajo cláusulas contractuales tipo aprobadas por la Comisión Europea. El Encargado ha evaluado el nivel de protección ofrecido por estos proveedores y aplica medidas complementarias cuando resulta necesario para garantizar un nivel de seguridad equivalente al europeo.</p>
+
+      <div class="legal-h2">Conservación y derechos</div>
+      <p class="legal-p">Los datos se conservan durante la vigencia del servicio y los plazos legales aplicables. Puedes ejercer tus derechos de acceso, rectificación, supresión, portabilidad y oposición escribiendo a <strong>legal@escuelapadel.app</strong>. Puedes reclamar ante la AEPD (www.aepd.es).</p>
+
+      <div class="legal-h1">C. Contrato de Encargo de Tratamiento (DPA)</div>
+
+      <div class="legal-h2">Roles de las partes</div>
+      <p class="legal-p">
+        <strong>Tú</strong> (monitor o escuela) eres el <strong>Responsable del tratamiento</strong> de los datos personales de tus alumnos.<br>
+        <strong>Escuela de Pádel</strong> actúa como <strong>Encargado del tratamiento</strong>, procesando esos datos únicamente para prestarte el servicio contratado.
+      </p>
+
+      <div class="legal-h2">Compromisos del Encargado (nosotros)</div>
+      <div class="legal-li">Tratar los datos solo según tus instrucciones y para las finalidades del servicio.</div>
+      <div class="legal-li">Garantizar confidencialidad y seguridad: cifrado en reposo y en tránsito, autenticación, segregación de datos por escuela mediante RLS en base de datos. El Encargado no garantiza la invulnerabilidad absoluta de los sistemas, pero se compromete a aplicar medidas acordes al estado de la técnica y a los riesgos existentes en cada momento.</div>
+      <div class="legal-li">Realizar copias de seguridad periódicas de los datos, sin garantizar la ausencia total de pérdida de datos ante eventos extraordinarios fuera de su control razonable.</div>
+      <div class="legal-li">No ceder datos fuera de los subencargados autorizados.</div>
+      <div class="legal-li">Notificarte cualquier brecha de seguridad que afecte a tus datos en menos de 48 horas desde su detección. La notificación a la autoridad de control competente (Agencia Española de Protección de Datos) y a los interesados afectados, cuando proceda, es obligación y responsabilidad exclusiva del Responsable del tratamiento.</div>
+      <div class="legal-li">Eliminar tus datos de alumnos al finalizar el servicio (máx. 30 días).</div>
+
+      <div class="legal-h2">Tus obligaciones como Responsable</div>
+      <div class="legal-li">Disponer de base jurídica legítima (contrato de servicios, consentimiento u otra) para tratar los datos de tus alumnos <em>antes</em> de introducirlos en la plataforma.</div>
+      <div class="legal-li">Haber informado a tus alumnos (o sus representantes legales si son menores) de que sus datos se almacenan en una plataforma digital de gestión.</div>
+      <div class="legal-li">Tener tu propia política de privacidad accesible para tus alumnos.</div>
+      <div class="legal-li">No introducir datos de categorías especiales (salud, origen étnico, etc.) ni de menores de 14 años sin consentimiento de sus representantes legales.</div>
+      <div class="legal-li">Atender directamente las solicitudes de derechos de tus alumnos (acceso, rectificación, supresión…).</div>
+
+      <div class="legal-h2">Exoneración de responsabilidad</div>
+      <p class="legal-p">El usuario reconoce que la plataforma es una herramienta de gestión y que el cumplimiento de la normativa de protección de datos en relación con los datos introducidos es de su <strong>exclusiva responsabilidad</strong>. El incumplimiento de las obligaciones del Responsable enumeradas en este DPA — especialmente la falta de base jurídica para el tratamiento o la ausencia de información a los interesados — es responsabilidad exclusivamente suya. El Encargado queda expresamente exonerado de cualquier consecuencia derivada de dicho incumplimiento, incluyendo sanciones administrativas impuestas por la AEPD u otras autoridades, reclamaciones de terceros o interesados, y daños de cualquier naturaleza derivados del tratamiento ilícito.</p>
+
+      <p class="legal-p" style="margin-top:20px;color:#94a3b8;font-size:11px;text-align:center">
+        Versión 1.0 — Marzo 2025 · Consultas: legal@escuelapadel.app
+      </p>
+    </div>
+    <button class="legal-aceptar" onclick="aceptarYCerrar()">✓ He leído y acepto los Términos</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/store.js"></script>
+<script>
+
+function switchTab(tab) {
+  document.getElementById('tab-entrar').classList.toggle('active', tab === 'entrar');
+  document.getElementById('tab-registrarse').classList.toggle('active', tab === 'registrarse');
+  document.getElementById('form-entrar').style.display      = tab === 'entrar'      ? 'block' : 'none';
+  document.getElementById('form-registrarse').style.display = tab === 'registrarse' ? 'block' : 'none';
+}
+
+function abrirTerminos(e) {
+  if (e) e.preventDefault();
+  document.getElementById('legal-overlay').classList.add('open');
+}
+function cerrarTerminosOverlay(e) {
+  if (e.target === document.getElementById('legal-overlay'))
+    document.getElementById('legal-overlay').classList.remove('open');
+}
+function aceptarYCerrar() {
+  document.getElementById('legal-overlay').classList.remove('open');
+  document.getElementById('reg-terms').checked = true;
+  onTermsChange();
+}
+function onTermsChange() {
+  const checked = document.getElementById('reg-terms').checked;
+  const btn = document.getElementById('btn-registrarse');
+  btn.disabled = !checked;
+  btn.style.opacity = checked ? '1' : '.45';
+  btn.style.cursor  = checked ? 'pointer' : 'not-allowed';
+}
+
+async function doLogin() {
+  const btn   = document.getElementById('btn-entrar');
+  const errEl = document.getElementById('login-error');
+  const email = document.getElementById('login-email').value.trim();
+  const pass  = document.getElementById('login-pass').value;
+  errEl.style.display = 'none';
+  btn.textContent = 'Entrando...'; btn.disabled = true;
+  try {
+    await login(email, pass);
+    window.location.href = 'index.html';
+  } catch (err) {
+    errEl.textContent = 'Email o contraseña incorrectos';
+    errEl.style.display = 'block';
+    btn.textContent = 'Entrar →'; btn.disabled = false;
+  }
+}
+
+async function doRegistro() {
+  const btn     = document.getElementById('btn-registrarse');
+  const errEl   = document.getElementById('reg-error');
+  const escuela = document.getElementById('reg-escuela').value.trim();
+  const email   = document.getElementById('reg-email').value.trim();
+  const pass    = document.getElementById('reg-pass').value;
+  errEl.style.display = 'none';
+  if (!escuela) { errEl.textContent = 'Escribe el nombre de tu escuela'; errEl.style.display='block'; return; }
+  if (pass.length < 8) { errEl.textContent = 'La contraseña debe tener al menos 8 caracteres'; errEl.style.display='block'; return; }
+  if (!document.getElementById('reg-terms').checked) {
+    errEl.textContent = 'Debes aceptar los Términos y Condiciones para continuar';
+    errEl.style.display = 'block'; return;
+  }
+  btn.textContent = 'Creando cuenta...'; btn.disabled = true;
+  try {
+    const { data, error } = await _sb.auth.signUp({ email, password: pass });
+    if (error) throw error;
+    await _sb.from('escuelas').insert({
+      usuario_id: data.user.id,
+      nombre: escuela,
+      terms_accepted_at: new Date().toISOString(),
+      terms_version: '1.0',
+    });
+    window.location.href = 'index.html';
+  } catch (err) {
+    errEl.textContent = err.message || 'Error al crear la cuenta';
+    errEl.style.display = 'block';
+    btn.textContent = 'Crear cuenta →'; btn.disabled = false;
+  }
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.getElementById('legal-overlay').classList.remove('open');
+  if (e.key === 'Enter') {
+    if (document.getElementById('form-entrar').style.display !== 'none') doLogin();
+    else doRegistro();
+  }
+});
+
+(async () => {
+  const { data: { user } } = await _sb.auth.getUser();
+  if (user) window.location.href = 'index.html';
+})();
+</script>
+</body>
+</html>

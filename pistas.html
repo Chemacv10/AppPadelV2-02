@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>Pistas — Escuela de Pádel</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .semana-card{background:var(--card);border-radius:14px;margin-bottom:8px;border:1.5px solid var(--borde);overflow:hidden;transition:all .15s}
+    .semana-card.open{border-color:#93c5fd;box-shadow:0 2px 10px rgba(37,99,235,.1)}
+    .semana-main{padding:12px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;user-select:none}
+    .semana-ico{width:46px;height:46px;background:linear-gradient(135deg,#eff6ff,#dbeafe);border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .semana-ico img{width:32px;height:32px;object-fit:contain}
+    .semana-rango{font-size:14px;font-weight:900;color:var(--texto)}
+    .semana-meta{font-size:11px;color:var(--sutil);font-weight:600;margin-top:2px}
+    .semana-chevron{font-size:16px;color:var(--sutil);transition:transform .2s;flex-shrink:0;margin-left:auto}
+    .semana-card.open .semana-chevron{transform:rotate(90deg)}
+    .semana-detail{display:none;padding:4px 14px 14px;border-top:1px solid var(--borde)}
+    .semana-card.open .semana-detail{display:block}
+    .semana-pistas-grid{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 12px}
+    .prev-pista{background:#f8fafc;border:1.5px solid var(--borde);border-radius:9px;padding:6px 10px;font-size:11px;font-weight:800;color:#475569;display:flex;align-items:center;gap:6px}
+    .prev-dot{width:8px;height:8px;border-radius:50%}
+    .semana-btns{display:flex;gap:8px}
+    .semana-btns .abtn{flex:1;justify-content:center;font-size:13px;padding:9px 8px;font-weight:800;border-radius:10px}
+    .periodo-tabs{display:flex;gap:6px;margin-bottom:12px}
+    .ptab{flex:1;background:var(--card);border:2px solid var(--borde);border-radius:10px;padding:7px 4px;text-align:center;font-size:11px;font-weight:800;color:var(--sutil);cursor:pointer;text-transform:uppercase;letter-spacing:.4px;transition:all .15s}
+    .ptab.active{background:#eff6ff;border-color:var(--azul);color:var(--azul)}
+  </style>
+</head>
+<body>
+<div class="page">
+  <div id="header-container"></div>
+  <nav id="nav-container"></nav>
+
+  <main class="content">
+    <div class="sec">
+      <img src="icons/pistas.png">
+      <div class="sec-title">Pistas <button onclick="abrirInfo()" style="background:none;border:none;color:#2563eb;font-size:13px;font-weight:800;cursor:pointer;padding:0;font-family:Nunito,sans-serif">Info.</button></div>
+      
+<div class="sec-count" id="contador">—</div>
+    </div>
+
+    <button class="btn-anadir" onclick="abrirNuevaSemana()">
+      <div class="btn-anadir-plus">+</div>
+      Añadir semana
+    </button>
+
+    <div class="periodo-tabs">
+      <div class="ptab active" onclick="sf(this,'actual')">Actual</div>
+      <div class="ptab" onclick="sf(this,'pasadas')">Pasadas</div>
+      <div class="ptab" onclick="sf(this,'todas')">Todas</div>
+    </div>
+
+    <div class="search" style="margin-top:8px">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input id="buscador" type="text" placeholder="Buscar por fechas…" oninput="filtrar()">
+    </div>
+
+    <div id="lista-semanas"><div class="loading"><div class="spinner"></div></div></div>
+  </main>
+
+
+
+  <div class="overlay" id="sh-semana">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title" id="se-titulo">Nueva semana</div>
+      <input type="hidden" id="se-edit-id" value="">
+      <input type="hidden" id="se-fecha">
+
+      <!-- Navegador de semana -->
+      <div id="se-fecha-wrap">
+        <div class="frow" style="margin-bottom:8px">
+          <div class="fgrp">
+            <div class="flbl">Mes</div>
+            <div class="fsel-wrap"><select class="fsel" id="se-mes" onchange="irAMesAnio()">
+              <option value="0">Enero</option><option value="1">Febrero</option>
+              <option value="2">Marzo</option><option value="3">Abril</option>
+              <option value="4">Mayo</option><option value="5">Junio</option>
+              <option value="6">Julio</option><option value="7">Agosto</option>
+              <option value="8">Septiembre</option><option value="9">Octubre</option>
+              <option value="10">Noviembre</option><option value="11">Diciembre</option>
+            </select></div>
+          </div>
+          <div class="fgrp">
+            <div class="flbl">Año</div>
+            <div class="fsel-wrap"><select class="fsel" id="se-anio" onchange="irAMesAnio()"></select></div>
+          </div>
+        </div>
+        <div class="flbl" style="margin-bottom:6px">Semana</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <button onclick="navegarSemana(-1)" style="width:40px;height:40px;border-radius:10px;border:1.5px solid var(--borde);background:var(--card);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">‹</button>
+          <div id="semana-preview" style="flex:1;text-align:center;font-size:14px;font-weight:800;color:var(--texto);background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:12px;padding:10px 8px"></div>
+          <button onclick="navegarSemana(1)" style="width:40px;height:40px;border-radius:10px;border:1.5px solid var(--borde);background:var(--card);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">›</button>
+        </div>
+      </div>
+
+      <div class="fgrp">
+        <div class="flbl">Número de pistas</div>
+        <div class="fsel-wrap"><select class="fsel" id="se-pistas">
+          <option value="1">1 pista</option>
+          <option value="2">2 pistas</option>
+          <option value="3" selected>3 pistas</option>
+          <option value="4">4 pistas</option>
+          <option value="5">5 pistas</option>
+          <option value="6">6 pistas</option>
+        </select></div>
+      </div>
+      <div id="se-aviso-reducir" style="display:none;font-size:11px;color:#f59e0b;font-weight:700;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:8px 10px;margin-bottom:8px">
+        ⚠️ Si reduces las pistas, los bloques de las pistas eliminadas seguirán existiendo pero no se mostrarán.
+      </div>
+      <div class="sheet-btns">
+        <button class="sbtn" onclick="cerrarSheetSemana()">Cancelar</button>
+        <button class="sbtn prim" id="se-btn-guardar" onclick="guardarSemana()">✓ Crear semana</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="confirm-overlay" id="confirm-overlay">
+    <div class="confirm-box">
+      <div class="confirm-titulo">¿Eliminar semana?</div>
+      <div class="confirm-texto">Se eliminarán todos los bloques de esta semana.</div>
+      <div class="confirm-btns">
+        <button class="cbtn" onclick="document.getElementById('confirm-overlay').classList.remove('open')">Cancelar</button>
+        <button class="cbtn danger" id="confirm-ok">Eliminar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+  <!-- Sheet info página -->
+  <div class="overlay" id="sh-info-pagina">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">Pistas</div>
+      <div style="font-size:14px;font-weight:600;color:var(--sub);line-height:1.65;padding-bottom:8px">Gestiona el calendario de tus pistas por semanas. Cada semana define cuántas pistas tienes activas. Dentro de cada semana puedes añadir bloques de cualquier tipo: clases, partidos, mantenimiento, libre...</div>
+      <div class="sheet-btns">
+        <button class="sbtn prim" style="flex:1" onclick="closeSheet('sh-info-pagina')">Entendido</button>
+      </div>
+    </div>
+  </div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/store.js"></script>
+<script src="js/ui.js"></script>
+<script>
+let _semanas=[];let _filtro='actual';
+const PISTA_COLORS=['#2563eb','#16a34a','#f59e0b','#e05a5a','#7c3aed','#0891b2'];
+
+function sf(btn,filtro){
+  btn.closest('.periodo-tabs').querySelectorAll('.ptab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');_filtro=filtro;filtrar();
+}
+
+function formatRango(inicio){
+  if(!inicio)return'—';
+  const d=new Date(inicio+'T00:00:00');
+  const fin=new Date(d);fin.setDate(fin.getDate()+6);
+  const m=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  return`${d.getDate()} ${m[d.getMonth()]} – ${fin.getDate()} ${m[fin.getMonth()]} ${fin.getFullYear()}`;
+}
+
+function esActual(s){
+  const hoy=new Date();hoy.setHours(0,0,0,0);
+  const ini=new Date(s.fecha_inicio+'T00:00:00');
+  const fin=new Date(ini);fin.setDate(ini.getDate()+6);
+  return hoy>=ini&&hoy<=fin;
+}
+function esPasada(s){
+  const hoy=new Date();hoy.setHours(0,0,0,0);
+  const fin=new Date(s.fecha_inicio+'T00:00:00');fin.setDate(fin.getDate()+6);
+  return fin<hoy;
+}
+
+function filtrar(){
+  const q=(document.getElementById('buscador')?.value||'').toLowerCase().trim();
+  let lista=_semanas;
+  if(_filtro==='actual') lista=_semanas.filter(s=>!esPasada(s));
+  else if(_filtro==='pasadas') lista=_semanas.filter(s=>esPasada(s));
+  if(q){
+    const MESES=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+    lista=lista.filter(s=>{
+      // Convertir fechas ISO a texto legible para buscar
+      const fmtFecha = iso => {
+        if(!iso) return '';
+        const d=new Date(iso+'T00:00:00');
+        return `${d.getDate()} ${MESES[d.getMonth()]} ${d.getFullYear()} ${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
+      };
+      const txt=[fmtFecha(s.fecha_inicio),fmtFecha(s.fecha_fin),String(s.num_pistas)].join(' ').toLowerCase();
+      return txt.includes(q);
+    });
+  }
+  renderLista(lista);
+}
+
+function renderLista(semanas){
+  document.getElementById('contador').textContent=semanas.length;
+  const el=document.getElementById('lista-semanas');
+  if(!semanas.length){showEmpty('lista-semanas','Sin semanas\nUsa el botón + para crear una');return}
+  el.innerHTML=semanas.map(s=>{
+    const bloques=s.bloques_pista||[];
+    const np=s.num_pistas||3;
+    const actual=esActual(s);
+    const previews=Array.from({length:np},(_,i)=>{
+      const n=bloques.filter(b=>b.pista===`Pista ${i+1}`).length;
+      const color=PISTA_COLORS[i]||'#64748b';
+      return`<div class="prev-pista"><div class="prev-dot" style="background:${color}"></div>P${i+1} <span style="color:${color};font-weight:900">${n}</span></div>`;
+    }).join('');
+    const chipActual = actual ? '<span class="chip cam" style="font-size:10px;padding:2px 7px">Semana actual</span>' : '';
+    return`
+    <div class="semana-card" id="sc-${s.id}" style="border-left:4px solid ${actual?'#2563eb':esPasada(s)?'#94a3b8':'#16a34a'}">
+      <div class="semana-main" onclick="toggleSemana('${s.id}')">
+        <div class="semana-ico"><img src="icons/pistas.png"></div>
+        <div style="flex:1">
+          <div class="semana-rango">${formatRango(s.fecha_inicio)}</div>
+          <div class="semana-meta">${np} pistas · ${bloques.length} bloques</div>
+        </div>
+        ${chipActual}
+        <div class="semana-chevron">›</div>
+      </div>
+      <div class="semana-detail">
+        <div class="semana-pistas-grid">${previews}</div>
+        <div class="semana-btns">
+          <button class="abtn prim" onclick="window.location.href='pistas-interior.html?id=${s.id}'">📋 Gestionar</button>
+          <button class="abtn" onclick="editarSemana('${s.id}',${s.num_pistas||3},'${s.fecha_inicio}')">✏️ Editar</button>
+          <button class="abtn dang" onclick="eliminarSemana('${s.id}')">🗑 Eliminar</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleSemana(id) {
+  const card = document.getElementById('sc-' + id);
+  if (!card) return;
+  const isOpen = card.classList.contains('open');
+  // Cerrar todas
+  document.querySelectorAll('.semana-card.open').forEach(c => c.classList.remove('open'));
+  // Abrir si estaba cerrada
+  if (!isOpen) card.classList.add('open');
+}
+
+function proximoLunes(){
+  const d=new Date();const dia=d.getDay();
+  const diff=dia===0?1:(8-dia)%7||7;
+  d.setDate(d.getDate()+diff);return d.toISOString().slice(0,10);
+}
+
+function lunesDe(fechaStr){
+  if(!fechaStr) return '';
+  const d=new Date(fechaStr+'T12:00:00');
+  const dia=d.getDay(); // 0=Dom, 1=Lun...
+  const diff=dia===0?-6:(1-dia);
+  d.setDate(d.getDate()+diff);
+  return d.toISOString().slice(0,10);
+}
+
+function actualizarPreviewSemana(lunes){
+  const prev=document.getElementById('semana-preview');
+  if(!lunes){prev.textContent='';return;}
+  document.getElementById('se-fecha').value=lunes;
+  const d=new Date(lunes+'T12:00:00');
+  const fin=new Date(d);fin.setDate(fin.getDate()+6);
+  const m=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  prev.textContent=`${d.getDate()} ${m[d.getMonth()]} — ${fin.getDate()} ${m[fin.getMonth()]} ${fin.getFullYear()}`;
+}
+
+function irAMesAnio(){
+  const mes  = +document.getElementById('se-mes').value;
+  const anio = +document.getElementById('se-anio').value;
+  // Ir al primer lunes del mes seleccionado
+  const primerDia = new Date(anio, mes, 1);
+  const lunes = lunesDe(primerDia.toISOString().slice(0,10));
+  actualizarPreviewSemana(lunes);
+}
+
+function navegarSemana(dir){
+  const actual=document.getElementById('se-fecha').value;
+  if(!actual) return;
+  const d=new Date(actual+'T12:00:00');
+  d.setDate(d.getDate()+(dir*7));
+  const nuevo=d.toISOString().slice(0,10);
+  // Actualizar selectores mes/año al navegar
+  const nd=new Date(nuevo+'T12:00:00');
+  const selMes=document.getElementById('se-mes');
+  const selAnio=document.getElementById('se-anio');
+  if(selMes) selMes.value=nd.getMonth();
+  if(selAnio) selAnio.value=nd.getFullYear();
+  actualizarPreviewSemana(nuevo);
+}
+
+function cerrarSheetSemana(){
+  closeSheet('sh-semana');
+  document.getElementById('se-edit-id').value='';
+  document.getElementById('se-aviso-reducir').style.display='none';
+}
+
+function editarSemana(id, numPistasActual, fechaInicio){
+  document.getElementById('se-edit-id').value = id;
+  document.getElementById('se-titulo').textContent = 'Editar semana';
+  document.getElementById('se-btn-guardar').textContent = '✓ Guardar cambios';
+  // Fecha bloqueada — solo muestra, no se puede navegar
+  actualizarPreviewSemana(fechaInicio);
+  document.querySelectorAll('#se-fecha-wrap button').forEach(b=>b.style.display='none');
+  const mesNsel = document.getElementById('se-mes-nsel');
+  const anioNsel = document.getElementById('se-anio-nsel');
+  if(mesNsel) mesNsel.style.display='none';
+  if(anioNsel) anioNsel.style.display='none';
+  document.getElementById('se-pistas').value = numPistasActual;
+  document.getElementById('se-pistas').onchange = function(){
+    const nuevo = parseInt(this.value);
+    document.getElementById('se-aviso-reducir').style.display =
+      nuevo < numPistasActual ? 'block' : 'none';
+  };
+  openSheet('sh-semana');
+}
+
+async function guardarSemana(){
+  const editId = document.getElementById('se-edit-id').value;
+  const numPistas = parseInt(document.getElementById('se-pistas').value);
+
+  if(editId){
+    try{
+      await _sb.from('semanas_pista').update({num_pistas:numPistas}).eq('id',editId);
+      cerrarSheetSemana();
+      toast('Semana actualizada','ok');
+      await cargar();
+    }catch(e){toast('Error al actualizar','err');console.error(e)}
+  } else {
+    const fecha=document.getElementById('se-fecha').value;
+    if(!fecha){toast('Selecciona la semana','warn');return;}
+    try{
+      const s=await saveSemana({fecha_inicio:fecha,num_pistas:numPistas});
+      cerrarSheetSemana();toast('Semana creada','ok');
+      window.location.href=`pistas-interior.html?id=${s.id}`;
+    }catch(e){toast('Error al crear','err');console.error(e)}
+  }
+}
+
+function eliminarSemana(id){
+  document.getElementById('confirm-overlay').classList.add('open');
+  document.getElementById('confirm-ok').onclick=async()=>{
+    document.getElementById('confirm-overlay').classList.remove('open');
+    try{
+      await _sb.from('bloques_pista').delete().eq('semana_id',id);
+      await _sb.from('semanas_pista').delete().eq('id',id);
+      toast('Semana eliminada','ok');await cargar();
+    }catch(e){toast('Error','err')}
+  };
+}
+
+async function cargar(){
+  showLoading('lista-semanas');
+  _semanas=await getSemanasPista();filtrar();
+}
+
+function abrirNuevaSemana(){
+  document.getElementById('se-edit-id').value='';
+  document.getElementById('se-titulo').textContent='Nueva semana';
+  document.getElementById('se-btn-guardar').textContent='✓ Crear semana';
+  document.querySelectorAll('#se-fecha-wrap button').forEach(b=>b.style.display='');
+  const mesNselN = document.getElementById('se-mes-nsel');
+  const anioNselN = document.getElementById('se-anio-nsel');
+  if(mesNselN) mesNselN.style.display='';
+  if(anioNselN) anioNselN.style.display='';
+  document.getElementById('se-pistas').onchange=null;
+  document.getElementById('se-aviso-reducir').style.display='none';
+  document.getElementById('se-pistas').value='3';
+
+  // Poblar selector de años (3 años atrás hasta 2 adelante)
+  const hoy=new Date();
+  const anioActual=hoy.getFullYear();
+  const selAnio=document.getElementById('se-anio');
+  selAnio.innerHTML='';
+  for(let y=anioActual-3;y<=anioActual+2;y++){
+    const o=document.createElement('option');
+    o.value=y; o.textContent=y;
+    if(y===anioActual) o.selected=true;
+    selAnio.appendChild(o);
+  }
+  document.getElementById('se-mes').value=hoy.getMonth();
+  // Sincronizar los custom dropdowns con los valores recién cargados
+  nselSync('se-anio');
+  nselSync('se-mes');
+
+  // Ir al lunes de la semana actual
+  const lunes=lunesDe(hoy.toISOString().slice(0,10));
+  actualizarPreviewSemana(lunes);
+  openSheet('sh-semana');
+}
+
+async function init(){
+  renderNav('pistas');
+  await initStore();
+  renderHeader({titulo:'Escuela de Pádel',subtitulo:'Pistas',icono:'icons/pistas.png',botonDerecho:'menu'});
+  await cargar();
+
+  // ── Inicializar selects custom ──
+  nselInit('se-mes');
+  nselInit('se-anio');
+  nselInit('se-pistas');
+}
+function abrirInfo() {
+  openSheet('sh-info-pagina');
+}
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+# GitHub Pages config
+# No se necesita nada especial para HTML estático,
+# pero este fichero le dice a GH Pages que sirva desde la raíz.
+include:
+  - icons
+  - css
+  - js

@@ -1,0 +1,1297 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>Clases — Escuela de Pádel</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .clase-fecha{font-size:16px;font-weight:900;color:var(--texto)}
+    .clase-meta{display:flex;align-items:center;gap:5px;margin-top:3px}
+    .clase-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+    .clase-grupo{font-size:12px;font-weight:700;color:var(--sub)}
+    .clase-estado{font-size:12px;font-weight:900}
+    .clase-resumen{font-size:11px;color:var(--sutil);font-weight:600;margin-top:2px}
+    .ej-list{margin-bottom:8px}
+    .ej-item{display:flex;align-items:center;gap:9px;padding:8px 10px;background:var(--fondo);border-radius:9px;margin-bottom:5px}
+    .ej-ico{width:32px;height:32px;border-radius:8px;background:var(--card);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden}
+    .ej-ico img{width:26px;height:26px;object-fit:contain}
+    .ej-nombre{font-size:12px;font-weight:800;color:var(--texto)}
+    .ej-sub{font-size:10px;color:var(--sutil);font-weight:600;margin-top:1px}
+    .ej-no-real{font-size:10px;color:var(--rojo);font-weight:800;margin-left:auto;flex-shrink:0}
+    .asist-wrap{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px}
+    .asist-chip{background:#dcfce7;color:#15803d;border-radius:18px;padding:3px 9px;font-size:11px;font-weight:800}
+    .wizard-steps{display:flex;gap:4px;padding:12px 15px 0}
+    .wstep{flex:1;height:4px;border-radius:2px;background:var(--borde);transition:background .3s}
+    .wstep.done{background:var(--verde)}.wstep.active{background:var(--azul)}
+    .wizard-hdr{padding:10px 15px 0}
+    .wizard-titulo{font-size:18px;font-weight:900;color:var(--texto);margin-bottom:2px}
+    .wizard-sub{font-size:12px;color:var(--sutil);font-weight:600;margin-bottom:12px}
+    .estado-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .estado-btn{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:12px;border:1.5px solid var(--borde);background:#f8fafc;cursor:pointer;font-size:13px;font-weight:800;color:var(--sub);font-family:inherit;transition:all .15s}
+    .estado-btn img{width:28px;height:28px;object-fit:contain}
+    .estado-btn.sel-Programada{border-color:var(--azul);background:#dbeafe;color:#1e40af}
+    .estado-btn.sel-Realizada{border-color:var(--verde);background:#dcfce7;color:#15803d}
+    .estado-btn.sel-Suspendida{border-color:var(--rojo);background:#fee2e2;color:#dc2626}
+    .estado-btn.sel-Festivo{border-color:var(--naranja);background:#fef9c3;color:#92400e}
+    .hora-row{display:flex;gap:5px;align-items:center}
+    .hora-sep{font-size:14px;font-weight:900;color:var(--sutil)}
+    /* hpick */
+    .hpick-wrap{flex:1;position:relative}
+    .hpick-box{display:flex;align-items:center;background:var(--fondo);border:2px solid var(--borde);border-radius:12px;overflow:hidden;cursor:pointer}
+    .hpick-box.open{border-color:var(--azul)}
+    .hpick-btn{background:none;border:none;color:var(--azul);font-size:18px;font-weight:900;padding:0 9px;height:42px;cursor:pointer;font-family:inherit;flex-shrink:0;-webkit-tap-highlight-color:transparent}
+    .hpick-btn:active{opacity:.6}
+    .hpick-val{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;font-size:16px;font-weight:900;color:var(--texto);height:42px;user-select:none;-webkit-tap-highlight-color:transparent}
+    .hpick-val-arrow{font-size:11px;color:var(--azul);font-weight:900}
+    .hpick-drop{position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:300;background:var(--card);border:2px solid var(--azul);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.13);max-height:190px;overflow-y:auto;display:none}
+    .hpick-drop.open{display:block}
+    .hpick-opt{padding:10px 0;font-size:15px;font-weight:800;color:var(--texto);text-align:center;cursor:pointer}
+    .hpick-opt.sel{color:var(--azul);background:#eff6ff}
+    .al-check{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--card);border:1.5px solid var(--borde);border-radius:11px;margin-bottom:6px;cursor:pointer;transition:all .15s}
+    .al-check.checked{border-color:var(--verde);background:#f0fdf4}
+    .check-box{width:24px;height:24px;border-radius:7px;border:2px solid var(--borde);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;background:var(--card)}
+    .al-check.checked .check-box{background:var(--verde);border-color:var(--verde);color:#fff}
+    .check-todos{display:flex;gap:8px;margin-bottom:10px}
+    .btn-todos{flex:1;padding:8px;border-radius:10px;border:1.5px solid var(--borde);background:var(--card);font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;color:var(--texto)}
+    .btn-todos.act{background:var(--verde);border-color:var(--verde);color:#fff}
+    .modo-btns{display:flex;gap:8px;margin-bottom:12px}
+    .modo-btn{flex:1;padding:11px;border-radius:12px;border:1.5px solid var(--borde);background:var(--card);font-size:13px;font-weight:900;cursor:pointer;font-family:inherit;color:var(--sub);transition:all .15s}
+    .modo-btn.active{background:var(--texto);border-color:var(--texto);color:#fff}
+    .estr-box{background:#f0f4ff;border:1px solid #bfdbfe;border-radius:12px;padding:12px 14px;margin-bottom:12px}
+    .estr-lbl{font-size:10px;font-weight:900;color:var(--sutil);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+    .estr-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+    .estr-nom{flex:1;font-size:13px;font-weight:800;color:var(--texto);display:flex;align-items:center;gap:6px}
+    .estr-nom img{width:20px;height:20px;object-fit:contain}
+    .counter{display:flex;align-items:center;border:1.5px solid var(--borde);border-radius:10px;overflow:hidden;background:var(--card)}
+    .counter button{width:32px;height:32px;border:none;background:none;font-size:16px;font-weight:900;cursor:pointer;color:var(--texto);font-family:inherit}
+    .counter span{min-width:28px;text-align:center;font-size:14px;font-weight:900}
+    .btn-generar{width:100%;padding:11px;border-radius:12px;border:1.5px solid #bfdbfe;background:#eff6ff;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;color:var(--azul);margin-bottom:12px}
+    .bloque-form{background:var(--card);border:1.5px solid var(--borde);border-radius:12px;padding:11px 12px;margin-bottom:8px}
+    .bloque-ej-row{display:flex;gap:6px;align-items:center}
+    .bloque-ej-row .bloque-ej-sel{flex:1}
+    .bloque-ej-row .bsel-wrap{flex:1;min-width:0;margin-bottom:0}
+    .btn-info-ej{width:30px;height:30px;min-width:30px;background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:var(--azul);cursor:pointer;flex-shrink:0}
+    .btn-info-ej:active{background:#dbeafe}
+    /* Popup descripción ejercicio */
+    .ej-popup-overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:9000;display:flex;align-items:flex-end;justify-content:center}
+    .ej-popup{background:var(--card);border-radius:18px 18px 0 0;width:100%;max-width:480px;padding:20px 18px 28px;max-height:70vh;overflow-y:auto}
+    .ej-popup-titulo{font-size:16px;font-weight:900;color:var(--texto);margin-bottom:4px}
+    .ej-popup-cat{font-size:12px;font-weight:700;color:var(--azul);margin-bottom:12px}
+    .ej-popup-label{font-size:10px;font-weight:900;color:var(--sutil);text-transform:uppercase;letter-spacing:.5px;margin-top:10px;margin-bottom:2px}
+    .ej-popup-val{font-size:13px;font-weight:600;color:var(--texto);line-height:1.5}
+    .ej-popup-close{width:100%;margin-top:16px;padding:10px;background:#f1f5f9;border:none;border-radius:10px;font-size:13px;font-weight:800;color:var(--texto);cursor:pointer;font-family:Nunito,sans-serif}
+    .bloque-form-hdr{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+    .bloque-form-cat{flex:1;font-size:13px;font-weight:900;color:var(--texto);display:flex;align-items:center;gap:6px}
+    .bloque-form-cat img{width:22px;height:22px;object-fit:contain}
+    .bloque-ord-btns{display:flex;gap:4px}
+    .btn-ord{width:28px;height:28px;border-radius:8px;border:1.5px solid var(--borde);background:#f8fafc;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--sub)}
+    .btn-del{width:28px;height:28px;border-radius:8px;border:1.5px solid #fca5a5;background:#fff5f5;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--rojo)}
+    /* bloque custom selects */
+    .bsel-wrap{position:relative;margin-bottom:7px}
+    .bsel-trigger{width:100%;display:flex;align-items:center;justify-content:space-between;background:#f8fafc;border:1.5px solid var(--borde);border-radius:9px;padding:9px 11px;font-size:13px;font-weight:700;color:var(--texto);cursor:pointer;-webkit-tap-highlight-color:transparent;box-sizing:border-box}
+    .bsel-trigger.open{border-color:var(--azul)}
+    .bsel-lbl{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .bsel-arrow{font-size:11px;color:var(--azul);font-weight:900;margin-left:6px;flex-shrink:0}
+    .bsel-drop{position:absolute;top:calc(100% + 3px);left:0;min-width:100%;width:max-content;z-index:300;background:var(--card);border:2px solid var(--azul);border-radius:10px;box-shadow:0 8px 20px rgba(0,0,0,.12);max-height:180px;overflow-y:auto;display:none}
+    .bsel-drop.open{display:block}
+    .bsel-opt{padding:9px 12px;font-size:13px;font-weight:700;color:var(--texto);cursor:pointer}
+    .bsel-opt.sel{color:var(--azul);background:#eff6ff}
+    .bdur-wrap{flex:1;position:relative}
+    .bdur-trigger{width:100%;display:flex;align-items:center;justify-content:space-between;background:#f8fafc;border:1.5px solid var(--borde);border-radius:9px;padding:8px 11px;font-size:12px;font-weight:700;color:var(--texto);cursor:pointer;-webkit-tap-highlight-color:transparent;box-sizing:border-box}
+    .bdur-trigger.open{border-color:var(--azul)}
+    .bdur-drop{position:absolute;top:calc(100% + 3px);left:0;right:0;z-index:300;background:var(--card);border:2px solid var(--azul);border-radius:10px;box-shadow:0 8px 20px rgba(0,0,0,.12);overflow:hidden;display:none}
+    .bdur-drop.open{display:block}
+    .bdur-opt{padding:9px 12px;font-size:12px;font-weight:700;color:var(--texto);cursor:pointer}
+    .bdur-opt.sel{color:var(--azul);background:#eff6ff}
+    .bloque-row{display:flex;align-items:center;gap:8px}
+
+    .no-real-lbl{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:var(--sutil);cursor:pointer;flex-shrink:0}
+    .no-real-lbl input{accent-color:var(--rojo)}
+    .add-bloques{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+    .add-blq{display:flex;align-items:center;gap:5px;padding:7px 12px;border-radius:20px;border:1.5px solid var(--borde);background:var(--card);font-size:12px;font-weight:800;cursor:pointer;color:var(--sub);font-family:inherit}
+    .add-blq img{width:18px;height:18px;object-fit:contain}
+    .wizard-btns{display:flex;gap:8px;padding:12px 15px 0;border-top:1px solid var(--borde);margin-top:8px}
+    .wbtn{flex:1;padding:12px;border-radius:11px;font-size:13px;font-weight:900;cursor:pointer;border:1.5px solid var(--borde);background:var(--card);color:var(--texto);font-family:inherit}
+    .wbtn.prim{background:var(--azul);color:#fff;border-color:var(--azul)}
+    .wbtn.verde{background:var(--verde);color:#fff;border-color:var(--verde)}
+    .filtros-wrap{display:flex;gap:8px;margin-bottom:10px}
+    .filtros-wrap > div{flex:1}
+    .nuevo-inline{display:flex;gap:6px;align-items:center;margin:-4px 0 8px;animation:fadeIn .15s ease}
+    .nuevo-inline .finp{flex:1}
+    .nuevo-inline .sbtn{padding:9px 12px;min-width:0;flex-shrink:0}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+  </style>
+</head>
+<body>
+<div class="page">
+  <div id="header-container"></div>
+  <nav id="nav-container"></nav>
+
+  <main class="content">
+    <div class="sec">
+      <img src="icons/clases.png">
+      <div class="sec-title">Clases <button onclick="abrirInfo()" style="background:none;border:none;color:#2563eb;font-size:13px;font-weight:800;cursor:pointer;padding:0;font-family:Nunito,sans-serif">Info.</button></div>
+      
+<div class="sec-count" id="contador">—</div>
+    </div>
+    <button class="btn-anadir" onclick="abrirWizard()" style="margin:0 0 10px">
+      <div class="btn-anadir-plus">+</div>
+      Añadir clase
+    </button>
+
+    <!-- Buscador -->
+    <div class="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input id="buscador" type="text" placeholder="Buscar por grupo, estado, fecha…" oninput="filtrar()">
+    </div>
+    <!-- Filtros fila 1: Día / Mes / Año -->
+    <div style="display:flex;gap:6px;margin-bottom:6px">
+      <div style="flex:1">
+        <div class="filter-label">Día</div>
+        <div class="fsel-wrap"><select class="fsel" id="filtro-dia" onchange="filtrar()">
+          <option value="">Todos</option>
+          <option value="1">Lunes</option>
+          <option value="2">Martes</option>
+          <option value="3">Miércoles</option>
+          <option value="4">Jueves</option>
+          <option value="5">Viernes</option>
+          <option value="6">Sábado</option>
+          <option value="0">Domingo</option>
+        </select></div>
+      </div>
+      <div style="flex:1">
+        <div class="filter-label">Mes</div>
+        <div class="fsel-wrap"><select class="fsel" id="filtro-mes" onchange="filtrar()">
+          <option value="">Todos</option>
+          <option value="01">Enero</option><option value="02">Febrero</option>
+          <option value="03">Marzo</option><option value="04">Abril</option>
+          <option value="05">Mayo</option><option value="06">Junio</option>
+          <option value="07">Julio</option><option value="08">Agosto</option>
+          <option value="09">Septiembre</option><option value="10">Octubre</option>
+          <option value="11">Noviembre</option><option value="12">Diciembre</option>
+        </select></div>
+      </div>
+      <div style="flex:1">
+        <div class="filter-label">Año</div>
+        <div class="fsel-wrap"><select class="fsel" id="filtro-anio" onchange="filtrar()">
+          <option value="">Todos</option>
+        </select></div>
+      </div>
+    </div>
+    <!-- Filtros fila 2: Estado / Grupo -->
+    <div style="display:flex;gap:6px;margin-bottom:10px">
+      <div style="flex:1">
+        <div class="filter-label">Estado</div>
+        <div class="fsel-wrap"><select class="fsel" id="filtro-estado" onchange="filtrar()">
+          <option value="">Todos</option>
+          <option>Programada</option><option>Realizada</option>
+          <option>Suspendida</option><option>Festivo</option>
+        </select></div>
+      </div>
+      <div style="flex:1">
+        <div class="filter-label">Grupo</div>
+        <div class="fsel-wrap"><select class="fsel" id="filtro-grupo" onchange="filtrar()">
+          <option value="">Todos</option>
+        </select></div>
+      </div>
+    </div>
+    <div id="lista-clases"><div class="loading"><div class="spinner"></div></div></div>
+  </main>
+
+  <!-- WIZARD -->
+  <div class="overlay" id="wizard-overlay">
+    <div class="sheet" style="max-height:94vh">
+      <div class="sheet-handle"></div>
+      <div class="wizard-steps" id="wizard-steps"></div>
+      <input type="hidden" id="cl-id">
+
+      <!-- FASE 1 -->
+      <div id="fase-1">
+        <div class="wizard-hdr">
+          <div class="wizard-titulo" id="wizard-titulo">Nueva Clase</div>
+          <div class="wizard-sub">Datos básicos</div>
+        </div>
+        <div class="fgrp">
+          <div class="flbl">Estado *</div>
+          <select id="cl-estado-sel" style="display:none" onchange="selEstadoFromSel(this.value)">
+            <option value="Programada">Programada</option>
+            <option value="Realizada">Realizada</option>
+            <option value="Suspendida">Suspendida</option>
+            <option value="Festivo">Festivo</option>
+          </select>
+          <div class="nsel-wrap" id="cl-estado-sel-nsel"></div>
+        </div>
+        <div class="frow">
+          <div class="fgrp">
+            <div class="flbl">Tipo de clase</div>
+            <div class="csel-wrap" id="cl-tipo-csel"></div>
+          </div>
+          <div class="fgrp">
+            <div class="flbl">Grupo</div>
+            <div class="fsel-wrap"><select class="fsel" id="cl-grupo"><option value="">— Sin grupo —</option></select></div>
+          </div>
+        </div>
+        <div class="frow">
+          <div class="fgrp">
+            <div class="flbl">Fecha *</div>
+            <input class="finp" id="cl-fecha" type="date">
+          </div>
+          <div class="fgrp">
+            <div class="flbl">Hora</div>
+            <div class="hora-row">
+              <div class="hpick-wrap">
+                <div class="hpick-box" id="cl-h-box">
+                  <button class="hpick-btn" onclick="hpickStep('cl-h',-1)">‹</button>
+                  <div class="hpick-val" id="cl-h-val" onclick="hpickToggle('cl-h')">10<span class="hpick-val-arrow">∨</span></div>
+                  <button class="hpick-btn" onclick="hpickStep('cl-h',1)">›</button>
+                </div>
+                <div class="hpick-drop" id="cl-h-drop"></div>
+              </div>
+              <div class="hora-sep">:</div>
+              <div class="hpick-wrap">
+                <div class="hpick-box" id="cl-m-box">
+                  <button class="hpick-btn" onclick="hpickStep('cl-m',-1)">‹</button>
+                  <div class="hpick-val" id="cl-m-val" onclick="hpickToggle('cl-m')">00<span class="hpick-val-arrow">∨</span></div>
+                  <button class="hpick-btn" onclick="hpickStep('cl-m',1)">›</button>
+                </div>
+                <div class="hpick-drop" id="cl-m-drop"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Duración + Pista en la misma fila -->
+        <div class="frow">
+          <div class="fgrp">
+            <div class="flbl">Duración</div>
+            <div class="fsel-wrap"><select class="fsel" id="cl-duracion">
+            <option value="30">30 min</option>
+            <option value="35">35 min</option>
+            <option value="40">40 min</option>
+            <option value="45">45 min</option>
+            <option value="50">50 min</option>
+            <option value="55">55 min</option>
+            <option value="60">60 min</option>
+            <option value="65">65 min</option>
+            <option value="70">70 min</option>
+            <option value="75">75 min</option>
+            <option value="80">80 min</option>
+            <option value="85">85 min</option>
+            <option value="90">90 min</option>
+            <option value="95">95 min</option>
+            <option value="100">100 min</option>
+            <option value="105">105 min</option>
+            <option value="110">110 min</option>
+            <option value="115">115 min</option>
+            <option value="120">120 min</option>
+            <option value="125">125 min</option>
+            <option value="130">130 min</option>
+            <option value="135">135 min</option>
+            <option value="140">140 min</option>
+            <option value="145">145 min</option>
+            <option value="150">150 min</option>
+            <option value="155">155 min</option>
+            <option value="160">160 min</option>
+            <option value="165">165 min</option>
+            <option value="170">170 min</option>
+            <option value="175">175 min</option>
+            <option value="180">180 min</option>
+            </select></div>
+          </div>
+          <div class="fgrp">
+            <div class="flbl">Pista</div>
+            <div class="csel-wrap" id="cl-pista-csel"></div>
+          </div>
+        </div>
+        <div class="fgrp" id="bloque-auto-wrap" style="display:none">
+          <div class="flbl" style="font-size:10px">Bloque automático</div>
+          <div id="bloque-auto-info" style="font-size:11px;font-weight:700;color:var(--azul);background:#eff6ff;border-radius:9px;padding:7px 10px;line-height:1.4"></div>
+        </div>
+        <div class="fgrp">
+          <div class="flbl">Observaciones</div>
+          <input class="finp" id="cl-notas" placeholder="Notas sobre la clase…">
+        </div>
+        <div class="wizard-btns">
+          <button class="wbtn" onclick="cerrarWizard()">✕ Cancelar</button>
+          <button class="wbtn prim" id="btn-f1-sig">Siguiente →</button>
+        </div>
+      </div>
+
+      <!-- FASE 2 -->
+      <div id="fase-2" style="display:none">
+        <div class="wizard-hdr">
+          <div class="wizard-titulo">Asistencia</div>
+          <div class="wizard-sub">Marca los alumnos que vinieron</div>
+        </div>
+        <div style="padding:0 15px">
+          <div class="check-todos">
+            <button class="btn-todos act" id="btn-todos" onclick="todosCheck(true)">✅ Todos</button>
+            <button class="btn-todos" id="btn-ninguno" onclick="todosCheck(false)">☐ Ninguno</button>
+          </div>
+          <div id="lista-asistencia"></div>
+        </div>
+        <div class="wizard-btns">
+          <button class="wbtn" onclick="irFase(1)">← Atrás</button>
+          <button class="wbtn prim" onclick="irFase(3)">Siguiente →</button>
+        </div>
+      </div>
+
+      <!-- FASE 3 -->
+      <div id="fase-3" style="display:none">
+        <div class="wizard-hdr">
+          <div class="wizard-titulo">Estructura</div>
+          <div class="wizard-sub">Ajusta las cantidades — se sugerirán los ejercicios menos usados</div>
+        </div>
+        <div style="padding:0 15px">
+          <div class="estr-box">
+            <div class="estr-lbl">Bloques por categoría:</div>
+            <div class="estr-row"><div class="estr-nom"><img src="icons/calentamiento.png">Calentamiento</div><div class="counter"><button onclick="adj('cal',-1)">−</button><span id="n-cal">1</span><button onclick="adj('cal',1)">+</button></div></div>
+            <div class="estr-row"><div class="estr-nom"><img src="icons/carritos.png">Carritos</div><div class="counter"><button onclick="adj('car',-1)">−</button><span id="n-car">3</span><button onclick="adj('car',1)">+</button></div></div>
+            <div class="estr-row"><div class="estr-nom"><img src="icons/situaciones.png">Situaciones</div><div class="counter"><button onclick="adj('sit',-1)">−</button><span id="n-sit">2</span><button onclick="adj('sit',1)">+</button></div></div>
+            <div class="estr-row"><div class="estr-nom"><img src="icons/partiditos.png">Partiditos</div><div class="counter"><button onclick="adj('par',-1)">−</button><span id="n-par">1</span><button onclick="adj('par',1)">+</button></div></div>
+          </div>
+        </div>
+        <div class="wizard-btns">
+          <button class="wbtn" onclick="irFase(2)">← Atrás</button>
+          <button class="wbtn prim" onclick="generarBloques()">Siguiente →</button>
+        </div>
+      </div>
+
+      <!-- FASE 4 -->
+      <div id="fase-4" style="display:none">
+        <div class="wizard-hdr">
+          <div class="wizard-titulo">Ejercicios</div>
+          <div class="wizard-sub">Revisa y ajusta los bloques</div>
+        </div>
+        <div id="bloques-container" style="padding:0 15px"></div>
+
+        <div class="wizard-btns">
+          <button class="wbtn" onclick="irFase(3)">← Atrás</button>
+          <button class="wbtn verde" onclick="guardar()">💾 Guardar clase</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sheet notificar -->
+  <!-- Sheet confirmación reserva de pista -->
+  <div class="overlay" id="sh-reserva-pista">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">🏟 Reservar pista</div>
+      <div style="padding:0 15px 4px">
+        <div style="font-size:12px;font-weight:700;color:var(--sub);margin-bottom:12px">¿Quieres reservar una pista para esta clase?</div>
+
+        <!-- Pista -->
+        <div class="fgrp">
+          <div class="flbl">Pista *</div>
+          <div class="fsel-wrap"><select class="fsel" id="rp-pista"></select></div>
+        </div>
+
+        <!-- Hora inicio / fin -->
+        <div class="frow">
+          <div class="fgrp">
+            <div class="flbl">Hora inicio</div>
+            <div style="background:#eff6ff;border:2px solid #bfdbfe;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:800;color:#1e3a8a" id="rp-hora-inicio">—</div>
+          </div>
+          <div class="fgrp">
+            <div class="flbl">Hora fin</div>
+            <div style="background:#eff6ff;border:2px solid #bfdbfe;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:800;color:#1e3a8a" id="rp-hora-fin">—</div>
+          </div>
+        </div>
+
+        <!-- Monitor -->
+        <div class="fgrp">
+          <div class="flbl">Monitor</div>
+          <div class="csel-wrap" id="rp-monitor-csel"></div>
+        </div>
+
+        <!-- Info semana -->
+        <div id="rp-semana-info" style="font-size:11px;font-weight:700;color:#16a34a;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:7px 10px;margin-bottom:4px;display:none"></div>
+
+        <div class="sheet-btns" style="margin-top:8px">
+          <button class="sbtn" onclick="closeSheet('sh-reserva-pista')">Ahora no</button>
+          <button class="sbtn prim" id="rp-btn-confirmar" onclick="confirmarReservaPista()">🏟 Reservar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="sh-notif">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">📣 Notificar alumnos</div>
+      <div style="padding:0 15px">
+        <div class="flbl" style="margin-bottom:4px">Mensaje</div>
+        <textarea class="finp" id="notif-msg" rows="4" style="resize:none;line-height:1.5;margin-bottom:10px"></textarea>
+        <div class="flbl">📧 Emails</div>
+        <div id="notif-emails" style="font-size:11px;color:var(--sutil);font-weight:600;margin-bottom:8px;word-break:break-all"></div>
+        <div class="flbl">💬 WhatsApp</div>
+        <div id="notif-wa" style="font-size:11px;color:var(--sutil);font-weight:600;margin-bottom:12px"></div>
+        <div class="sheet-btns">
+          <button class="sbtn" onclick="enviarEmail()">📧 Email</button>
+          <button class="sbtn prim" onclick="enviarWA()">💬 WhatsApp</button>
+        </div>
+        <button class="sbtn" style="width:100%;margin-top:8px" onclick="closeSheet('sh-notif')">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Popup info ejercicio -->
+  <div class="ej-popup-overlay" id="ej-popup-overlay" style="display:none" onclick="if(event.target===this)cerrarInfoEj()">
+    <div class="ej-popup">
+      <div class="ej-popup-titulo" id="ej-popup-nombre">—</div>
+      <div class="ej-popup-cat" id="ej-popup-cat"></div>
+      <div id="ej-popup-desc-wrap">
+        <div class="ej-popup-label">Descripción</div>
+        <div class="ej-popup-val" id="ej-popup-desc">Sin descripción</div>
+      </div>
+      <div id="ej-popup-material-wrap" style="display:none">
+        <div class="ej-popup-label">Material</div>
+        <div class="ej-popup-val" id="ej-popup-material"></div>
+      </div>
+      <div id="ej-popup-nivel-wrap" style="display:none">
+        <div class="ej-popup-label">Nivel</div>
+        <div class="ej-popup-val" id="ej-popup-nivel"></div>
+      </div>
+      <div id="ej-popup-video-wrap" style="display:none">
+        <div class="ej-popup-label">Vídeo</div>
+        <a id="ej-popup-video" href="#" target="_blank" class="ej-popup-val" style="color:var(--rojo)">▶ Ver vídeo</a>
+      </div>
+      <button class="ej-popup-close" onclick="cerrarInfoEj()">Cerrar</button>
+    </div>
+  </div>
+
+  <div class="confirm-overlay" id="confirm-overlay">
+    <div class="confirm-box">
+      <div class="confirm-titulo">¿Eliminar clase?</div>
+      <div class="confirm-texto" id="confirm-texto"></div>
+      <div class="confirm-btns">
+        <button class="cbtn" onclick="document.getElementById('confirm-overlay').classList.remove('open')">Cancelar</button>
+        <button class="cbtn danger" id="confirm-ok">Eliminar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+  <!-- Sheet info página -->
+  <div class="overlay" id="sh-info-pagina">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">Clases</div>
+      <div style="font-size:14px;font-weight:600;color:var(--sub);line-height:1.65;padding-bottom:8px">Registra cada sesión con su grupo, estado, asistencia y ejercicios realizados. Puedes notificar a los alumnos si una clase se suspende o cambia. Al guardar, se crea automáticamente un bloque en el calendario de pistas.</div>
+      <div class="sheet-btns">
+        <button class="sbtn prim" style="flex:1" onclick="closeSheet('sh-info-pagina')">Entendido</button>
+      </div>
+    </div>
+  </div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/store.js"></script>
+<script src="js/ui.js"></script>
+<script>
+let _clases=[],_grupos=[],_ejercicios={},_estadoSel='Programada',_bloques=[],_editId=null;
+let _cfgTiposClase=['Grupo','Particular','Clase-partido','Libre'];
+let _cfgPistas=[];
+let _cfgMonitores=[];
+
+function _renderPistaCsel(pistaActual) {
+  cselRender('cl-pista-csel',
+    ['— Sin pista —', ..._cfgPistas],
+    pistaActual || '— Sin pista —',
+    '— Sin pista —', null,
+    (v, lista) => { _cfgPistas=lista.filter(x=>x!=='— Sin pista —'); saveConfig('pistas',_cfgPistas).catch(console.error); _actualizarBloqueInfo(); },
+    (v, lista) => { _cfgPistas=lista.filter(x=>x!=='— Sin pista —'); saveConfig('pistas',_cfgPistas).catch(console.error); _actualizarBloqueInfo(); },
+    '+ Añadir pista…'
+  );
+  // Hook onChange para actualizar bloque info
+  const wrap = document.getElementById('cl-pista-csel');
+  if (wrap && wrap._cselState) {
+    const orig = wrap._cselState.onChange;
+    wrap._cselState.onChange = (v) => { if(orig) orig(v); _actualizarBloqueInfo(); };
+  }
+}
+const ESTADO_COLOR={Programada:'#2563eb',Realizada:'#16a34a',Suspendida:'#e05a5a',Festivo:'#f59e0b'};
+const ESTADO_CHIP={Programada:'caz',Realizada:'cvd',Suspendida:'crd',Festivo:'cam'};
+const ICONO_CAT={Calentamiento:'icons/calentamiento.png',Carritos:'icons/carritos.png',Situaciones:'icons/situaciones.png',Partiditos:'icons/partiditos.png'};
+const ICONO_ESTADO={Programada:'icons/programada.png',Realizada:'icons/realizada.png',Suspendida:'icons/suspendida.png',Festivo:'icons/festivo.png'};
+const CATS=['Calentamiento','Carritos','Situaciones','Partiditos'];
+const ESTADOS_SIMPLES=['Suspendida','Festivo'];
+
+// ── Hora picker clases ──
+const _hpick={'cl-h':{val:10,opts:Array.from({length:24},(_,i)=>i),step:1},'cl-m':{val:0,opts:Array.from({length:12},(_,i)=>i*5),step:5}};
+function _hpickRender(id){const el=document.getElementById(id+'-val');if(el)el.innerHTML=String(_hpick[id].val).padStart(2,'0')+'<span class="hpick-val-arrow">\u2228</span>';}
+function hpickStep(id,dir){const cfg=_hpick[id];const idx=cfg.opts.indexOf(cfg.val);cfg.val=cfg.opts[(idx+dir+cfg.opts.length)%cfg.opts.length];_hpickRender(id);const drop=document.getElementById(id+'-drop');if(drop&&drop.classList.contains('open'))drop.querySelectorAll('.hpick-opt').forEach(o=>o.classList.toggle('sel',Number(o.dataset.v)===cfg.val));}
+function hpickToggle(id){const drop=document.getElementById(id+'-drop');const box=document.getElementById(id+'-box');const isOpen=drop.classList.contains('open');document.querySelectorAll('.hpick-drop').forEach(d=>d.classList.remove('open'));document.querySelectorAll('.hpick-box').forEach(b=>b.classList.remove('open'));if(!isOpen){const cfg=_hpick[id];drop.innerHTML=cfg.opts.map(v=>`<div class="hpick-opt${v===cfg.val?' sel':''}" data-v="${v}" onclick="hpickPick('${id}',${v})">${String(v).padStart(2,'0')}</div>`).join('');drop.classList.add('open');box.classList.add('open');setTimeout(()=>{const s=drop.querySelector('.sel');if(s)s.scrollIntoView({block:'center'});},20);}}
+function hpickPick(id,val){_hpick[id].val=val;_hpickRender(id);document.getElementById(id+'-drop').classList.remove('open');document.getElementById(id+'-box').classList.remove('open');}
+document.addEventListener('click',e=>{if(!e.target.closest('.hpick-wrap')){document.querySelectorAll('.hpick-drop').forEach(d=>d.classList.remove('open'));document.querySelectorAll('.hpick-box').forEach(b=>b.classList.remove('open'));}});
+function buildHoraPickers(){/* no-op */}
+function fillTipoClaseSelect(val) {
+  cselRender(
+    'cl-tipo-csel',
+    _cfgTiposClase,
+    val || _cfgTiposClase[0] || 'Grupo',
+    null, null,
+    (v, lista) => { _cfgTiposClase = lista; saveConfig('tipos_clase', lista).catch(console.error); },
+    (v, lista) => { _cfgTiposClase = lista; saveConfig('tipos_clase', lista).catch(console.error); },
+    '+ Añadir tipo…'
+  );
+}
+
+function getHora(){return String(_hpick['cl-h'].val).padStart(2,'0')+':'+String(_hpick['cl-m'].val).padStart(2,'0')}
+function setHora(s){if(!s)return;const[h,m]=s.split(':').map(Number);_hpick['cl-h'].val=isNaN(h)?10:Math.min(23,Math.max(0,h));_hpick['cl-m'].val=isNaN(m)?0:Math.round(m/5)*5%60;_hpickRender('cl-h');_hpickRender('cl-m');}
+
+function filtrar(){
+  const q=(document.getElementById('buscador')?.value||'').toLowerCase().trim();
+  const fE=document.getElementById('filtro-estado').value;
+  const fG=document.getElementById('filtro-grupo').value;
+  const fD=document.getElementById('filtro-dia')?.value;
+  const fM=document.getElementById('filtro-mes')?.value;
+  const fA=document.getElementById('filtro-anio')?.value;
+  const lista=_clases.filter(c=>{
+    if(fE && c.estado!==fE) return false;
+    if(fG==='__sin_grupo__') return !c.grupo_id;
+    if(fG && c.grupo_id!==fG) return false;
+    if(c.fecha){
+      if(fD) { const d=new Date(c.fecha+'T00:00:00'); if(String(d.getDay())!==fD) return false; }
+      if(fM && c.fecha.slice(5,7)!==fM) return false;
+      if(fA && c.fecha.slice(0,4)!==fA) return false;
+    }
+    if(!q) return true;
+    const g=_grupos.find(x=>x.id===c.grupo_id);
+    const fechaFmt = c.fecha ? formatFecha(c.fecha) : '';
+    const hay=[c.estado,c.tipo_clase,c.fecha,fechaFmt,c.hora,c.notas,g?.nombre].filter(Boolean).join(' ').toLowerCase();
+    return hay.includes(q);
+  });
+  renderLista(lista.slice().sort((a,b)=>{
+    const hoy = new Date(); hoy.setHours(0,0,0,0);
+    const fa = new Date(a.fecha+'T00:00:00');
+    const fb = new Date(b.fecha+'T00:00:00');
+    const aFutura = a.estado==='Programada' && fa>=hoy;
+    const bFutura = b.estado==='Programada' && fb>=hoy;
+    // Futuras programadas primero (ascendente), luego resto (descendente)
+    if(aFutura && bFutura) return fa-fb;
+    if(aFutura) return -1;
+    if(bFutura) return 1;
+    return fb-fa;
+  }));
+}
+
+function renderLista(lista){
+  document.getElementById('contador').textContent=lista.length;
+  const el=document.getElementById('lista-clases');
+  if(!lista.length){showEmpty('lista-clases','Sin clases con ese filtro');return}
+  el.innerHTML=lista.map(c=>{
+    const g=_grupos.find(x=>x.id===c.grupo_id);
+    const color=ESTADO_COLOR[c.estado]||'#94a3b8';
+    const hora=c.hora?c.hora.slice(0,5):'';
+    const bloqs=c.clase_ejercicios||[];
+    const asist=(c.clase_asistencia||[]).filter(a=>a.asistio);
+    const dur=c.duracion?c.duracion+' min':'';
+    return `
+    <div class="card" id="card-${c.id}" style="border-left-color:${color}">
+      <div class="card-main" onclick="toggleCard('${c.id}')">
+        <div style="width:40px;height:40px;border-radius:10px;background:#f8fafc;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <img src="${ICONO_ESTADO[c.estado]||'icons/todos_clase.png'}" style="width:36px;height:36px;object-fit:contain">
+        </div>
+        <div class="ci">
+          <div class="clase-fecha">${formatFecha(c.fecha)}${hora?' · '+hora:''}</div>
+          <div class="clase-meta">
+            <div class="clase-dot" style="background:${color}"></div>
+            <span class="clase-grupo">${g?.nombre||'Sin grupo'} · </span>
+            <span class="clase-estado" style="color:${color}">${c.estado}</span>
+          </div>
+          <div class="clase-resumen">${asist.length?asist.length+' asistentes · ':''}${bloqs.length?bloqs.length+' bloques · ':''}${dur}${c.pista?' · 🏟 '+c.pista:''}</div>
+        </div>
+        <div class="chev" id="chev-${c.id}">▼</div>
+      </div>
+      <div class="exp" id="exp-${c.id}">
+        ${renderEjs(bloqs)}
+        ${renderAsist(asist)}
+        ${c.notas?`<div class="dl">Notas</div><div class="dv">${c.notas}</div>`:''}
+        <div class="abtns">
+          <button class="abtn prim" onclick='abrirEditar(${JSON.stringify(c).replace(/'/g,"&#39;")})'>✏️ Editar</button>
+          <button class="abtn dang" onclick="confirmarEliminar('${c.id}')">🗑</button>
+        </div>
+      </div>
+    </div>`}).join('');
+}
+
+function renderEjs(bloqs){
+  if(!bloqs.length)return'';
+  return`<div class="ej-list">`+
+    bloqs.sort((a,b)=>a.orden-b.orden).map(b=>{
+      const ej=b.ejercicios||{};const cat=ej.categoria||'';
+      const ejObj = (_ejercicios[cat]||[]).find(e=>e.id===b.ejercicio_id);
+      const infoBtn = ejObj && (ejObj.descripcion||ejObj.material||ejObj.video_url)
+        ? `<button onclick="mostrarInfoEjObj(${JSON.stringify({nombre:ejObj.nombre,categoria:ejObj.categoria,tipo:ejObj.tipo,nivel:ejObj.nivel,descripcion:ejObj.descripcion,material:ejObj.material,video_url:ejObj.video_url}).replace(/"/g,'&quot;')})" style="background:none;border:none;color:var(--azul);font-size:16px;cursor:pointer;padding:0 2px;line-height:1" title="Ver descripción">ℹ</button>` : '';
+      return`<div class="ej-item"><div class="ej-ico"><img src="${ICONO_CAT[cat]||'icons/ejercicios.png'}"></div><div style="flex:1;min-width:0"><div class="ej-nombre">${ej.nombre||'Ejercicio'}</div><div class="ej-sub">${cat}${b.duracion?' · '+b.duracion:''}</div></div>${!b.realizado?'<span class="ej-no-real">✗</span>':''}${infoBtn}</div>`;
+    }).join('')+`</div>`;
+}
+
+function renderAsist(asist){
+  if(!asist.length)return'';
+  return`<div class="asist-wrap">`+asist.map(a=>`<span class="asist-chip">✓ ${a.alumnos?.nombre||'Alumno'}</span>`).join('')+`</div>`;
+}
+
+function abrirWizard(){
+  _editId=null;_bloques=[];_estadoSel='Programada';
+  document.getElementById('wizard-titulo').textContent='Nueva Clase';
+  document.getElementById('cl-id').value='';
+  document.getElementById('cl-fecha').value=new Date().toISOString().slice(0,10);
+  document.getElementById('cl-grupo').value='';
+  nselSync('cl-grupo');
+  document.getElementById('cl-notas').value='';
+  document.getElementById('cl-duracion').value='60';
+  nselSync('cl-duracion');
+  _renderPistaCsel('');
+  document.getElementById('bloque-auto-wrap').style.display='none';
+  setHora('10:00');
+  fillTipoClaseSelect('Grupo');
+  const selEl = document.getElementById('cl-estado-sel');
+  if(selEl) { selEl.value = _estadoSel; nselSync('cl-estado-sel'); }
+  openSheet('wizard-overlay');
+  irFase(1);
+}
+
+function abrirEditar(c){
+  _editId=c.id;_bloques=[];_estadoSel=c.estado||'Programada';
+  document.getElementById('wizard-titulo').textContent='Editar Clase';
+  document.getElementById('cl-id').value=c.id;
+  document.getElementById('cl-fecha').value=c.fecha;
+  document.getElementById('cl-grupo').value=c.grupo_id||'';
+  cselSetValue('cl-pista-csel', c.pista || '— Sin pista —');
+  document.getElementById('bloque-auto-wrap').style.display='none';
+  fillTipoClaseSelect(c.tipo_clase||'Grupo');
+  document.getElementById('cl-notas').value=c.notas||'';
+  document.getElementById('cl-duracion').value=String(c.duracion||60);
+  nselSync('cl-duracion');
+  setHora(c.hora||'10:00');
+  if(!ESTADOS_SIMPLES.includes(c.estado)){
+    _bloques=(c.clase_ejercicios||[]).map(b=>({ejercicio_id:b.ejercicio_id,nombre:b.ejercicios?.nombre||'',categoria:b.ejercicios?.categoria||'',orden:b.orden,duracion:b.duracion||'15 min',realizado:b.realizado!==false}));
+  }
+  const selEl2 = document.getElementById('cl-estado-sel');
+  if(selEl2) { selEl2.value = _estadoSel; nselSync('cl-estado-sel'); }
+  openSheet('wizard-overlay');
+  irFase(1);
+}
+
+function cerrarWizard(){closeSheet('wizard-overlay')}
+// click en overlay → gestionado por ui.js
+
+function selEstadoFromSel(val) {
+  _estadoSel = val;
+  irFase(1);
+}
+
+function irFase(n){
+  for(let i=1;i<=4;i++)document.getElementById('fase-'+i).style.display='none';
+  document.getElementById('fase-'+n).style.display='block';
+  const esSimple=ESTADOS_SIMPLES.includes(_estadoSel);
+  const total=esSimple?1:4;
+  document.getElementById('wizard-steps').innerHTML=Array.from({length:total},(_,i)=>
+    `<div class="wstep ${i<n-1?'done':i===n-1?'active':''}"></div>`).join('');
+  const btnSig=document.getElementById('btn-f1-sig');
+  if(esSimple){
+    btnSig.textContent='💾 Guardar';btnSig.className='wbtn verde';
+    btnSig.onclick=guardar;
+  }else{
+    btnSig.textContent='Siguiente →';btnSig.className='wbtn prim';
+    btnSig.onclick=()=>{
+      cargarAsistencia();irFase(2);
+    };
+  }
+  if(n===2)cargarAsistencia();
+}
+
+function selEstado(btn,estado){
+  _estadoSel=estado;
+  const sel=document.getElementById('cl-estado-sel');
+  if(sel){sel.value=estado;nselSync('cl-estado-sel');}
+  irFase(1);
+}
+
+async function cargarAsistencia(){
+  const grupoId=document.getElementById('cl-grupo').value;
+  const todosAlumnos=await getAlumnos();
+  let alumnos;
+  if (grupoId) {
+    // Primero intentar por relación N:M (alumno_grupos)
+    try {
+      const miembros = await getAlumnosDeGrupo(grupoId);
+      if (miembros && miembros.length) {
+        const ids = new Set(miembros.map(a => a.id));
+        alumnos = todosAlumnos.filter(a => ids.has(a.id));
+      } else {
+        // Fallback: campo grupo_id directo en alumnos
+        alumnos = todosAlumnos.filter(a => a.grupo_id === grupoId);
+      }
+    } catch(e) {
+      alumnos = todosAlumnos.filter(a => a.grupo_id === grupoId);
+    }
+    // Si aún vacío, mostrar todos
+    if (!alumnos.length) alumnos = todosAlumnos;
+  } else {
+    // Clase sin grupo: mostrar todos
+    alumnos = todosAlumnos;
+  }
+  let asistPrev={};
+  if(_editId){const c=_clases.find(x=>x.id===_editId);(c?.clase_asistencia||[]).forEach(a=>asistPrev[a.alumno_id]=a.asistio)}
+  document.getElementById('lista-asistencia').innerHTML=alumnos.map(a=>{
+    const ok=_editId?(asistPrev[a.id]!==false):true;
+    return`<div class="al-check ${ok?'checked':''}" data-id="${a.id}" onclick="toggleCheck(this)"><div class="check-box">${ok?'✓':''}</div><div style="flex:1;font-size:13px;font-weight:800;color:var(--texto)">${a.nombre}</div><div style="font-size:11px;color:var(--sutil);font-weight:600">${a.nivel||''}</div></div>`;
+  }).join('');
+}
+
+function toggleCheck(el){
+  const on=el.classList.toggle('checked');
+  el.querySelector('.check-box').textContent=on?'✓':'';
+}
+function todosCheck(val){
+  document.querySelectorAll('.al-check').forEach(el=>{el.classList.toggle('checked',val);el.querySelector('.check-box').textContent=val?'✓':''});
+  document.getElementById('btn-todos').classList.toggle('act',val);
+  document.getElementById('btn-ninguno').classList.toggle('act',!val);
+}
+
+// setModo removed
+
+function adj(id,delta){const el=document.getElementById('n-'+id);el.textContent=Math.max(0,parseInt(el.textContent)+delta)}
+
+function generarSugerencia(){
+  const map={cal:'ical',car:'icar',sit:'isit',par:'ipar'};
+  Object.entries(map).forEach(([k,ik])=>{
+    const cat=CATS[['cal','car','sit','par'].indexOf(k)];
+    const ejs=_ejercicios[cat]||[];
+    const n=Math.max(1,ejs.filter(e=>(e.usos||0)<3).length>0?Math.ceil(Math.random()*3):1);
+    const el=document.getElementById('n-'+ik);if(el)el.textContent=n;
+  });
+}
+
+function generarBloques(){
+  try {
+    const nCal = parseInt(document.getElementById('n-cal').textContent)||0;
+    const nCar = parseInt(document.getElementById('n-car').textContent)||0;
+    const nSit = parseInt(document.getElementById('n-sit').textContent)||0;
+    const nPar = parseInt(document.getElementById('n-par').textContent)||0;
+    const counts={Calentamiento:nCal,Carritos:nCar,Situaciones:nSit,Partiditos:nPar};
+    _bloques=[];let orden=0;
+    Object.entries(counts).forEach(([cat,n])=>{
+      const ejs=[...(_ejercicios[cat]||[])].sort((a,b)=>(a.usos||0)-(b.usos||0));
+      for(let i=0;i<n;i++){
+        const ej=ejs[i%(ejs.length||1)];
+        _bloques.push({ejercicio_id:ej?.id||null,nombre:ej?.nombre||'Sin ejercicio',categoria:cat,orden:orden++,duracion:'15 min',realizado:true});
+      }
+    });
+    renderBloquesForm();
+    irFase(4);
+  } catch(e) { toast('Error generando bloques: '+e.message,'err'); console.error(e); }
+}
+
+
+
+// ── Info ejercicio popup ────────────────────────
+function mostrarInfoEjObj(ej) {
+  document.getElementById('ej-popup-nombre').textContent = ej.nombre || '—';
+  document.getElementById('ej-popup-cat').textContent = [ej.categoria, ej.tipo, ej.nivel].filter(Boolean).join(' · ');
+  document.getElementById('ej-popup-desc').textContent = ej.descripcion || 'Sin descripción';
+  const matWrap = document.getElementById('ej-popup-material-wrap');
+  if (ej.material) { document.getElementById('ej-popup-material').textContent = ej.material; matWrap.style.display='block'; }
+  else matWrap.style.display='none';
+  const nivWrap = document.getElementById('ej-popup-nivel-wrap');
+  if (ej.nivel) { document.getElementById('ej-popup-nivel').textContent = ej.nivel; nivWrap.style.display='block'; }
+  else nivWrap.style.display='none';
+  const vidWrap = document.getElementById('ej-popup-video-wrap');
+  if (ej.video_url) { document.getElementById('ej-popup-video').href = ej.video_url; vidWrap.style.display='block'; }
+  else vidWrap.style.display='none';
+  document.getElementById('ej-popup-overlay').style.display = 'flex';
+}
+
+function mostrarInfoEj(idx) {
+  const b = _bloques[idx];
+  if (!b || !b.ejercicio_id) { toast('Selecciona primero un ejercicio', 'warn'); return; }
+  // Buscar el ejercicio completo en _ejercicios
+  const ejsCat = _ejercicios[b.categoria] || [];
+  const ej = ejsCat.find(e => e.id === b.ejercicio_id || e.id === +b.ejercicio_id);
+  if (!ej) { toast('No se encontró el ejercicio', 'warn'); return; }
+
+  document.getElementById('ej-popup-nombre').textContent = ej.nombre || '—';
+  document.getElementById('ej-popup-cat').textContent = [ej.categoria, ej.tipo, ej.nivel].filter(Boolean).join(' · ');
+  document.getElementById('ej-popup-desc').textContent = ej.descripcion || 'Sin descripción';
+
+  const matWrap = document.getElementById('ej-popup-material-wrap');
+  if (ej.material) {
+    document.getElementById('ej-popup-material').textContent = ej.material;
+    matWrap.style.display = 'block';
+  } else { matWrap.style.display = 'none'; }
+
+  const nivWrap = document.getElementById('ej-popup-nivel-wrap');
+  if (ej.nivel) {
+    document.getElementById('ej-popup-nivel').textContent = ej.nivel;
+    nivWrap.style.display = 'block';
+  } else { nivWrap.style.display = 'none'; }
+
+  const vidWrap = document.getElementById('ej-popup-video-wrap');
+  if (ej.video_url) {
+    document.getElementById('ej-popup-video').href = ej.video_url;
+    vidWrap.style.display = 'block';
+  } else { vidWrap.style.display = 'none'; }
+
+  document.getElementById('ej-popup-overlay').style.display = 'flex';
+}
+
+function cerrarInfoEj() {
+  document.getElementById('ej-popup-overlay').style.display = 'none';
+}
+
+function actualizarBtnInfo(idx, ejId) {
+  // El botón ya es visible siempre; no hace falta nada extra
+}
+
+function renderBloquesForm(){
+  const cont=document.getElementById('bloques-container');cont.innerHTML='';
+  _bloques.forEach((b,i)=>cont.appendChild(crearBloqueEl(b,i)));
+}
+
+function crearBloqueEl(b,idx){
+  const div=document.createElement('div');div.className='bloque-form';div.dataset.idx=idx;
+  const ejsCat=_ejercicios[b.categoria]||[];
+  const opts=ejsCat.map(e=>`<option value="${e.id}" ${e.id===b.ejercicio_id?'selected':''}>${e.nombre}</option>`).join('');
+  div.innerHTML=`
+    <div class="bloque-form-hdr">
+      <div class="bloque-form-cat"><img src="${ICONO_CAT[b.categoria]||'icons/ejercicios.png'}">${b.categoria}</div>
+      <div class="bloque-ord-btns">
+        <button class="btn-ord" onclick="moverBloque(${idx},-1)">↑</button>
+        <button class="btn-ord" onclick="moverBloque(${idx},1)">↓</button>
+        <button class="btn-del" onclick="eliminarBloque(${idx})">✕</button>
+      </div>
+    </div>
+    <div class="bloque-ej-row">
+      <div class="bsel-wrap">
+        <div class="bsel-trigger" id="bsel-trig-${idx}" onclick="bselToggle(${idx})">
+          <span class="bsel-lbl" id="bsel-lbl-${idx}">${b.ejercicio_id?(ejsCat.find(e=>e.id===b.ejercicio_id)?.nombre||'Selecciona ejercicio…'):'Selecciona ejercicio…'}</span>
+          <span class="bsel-arrow">∨</span>
+        </div>
+        <div class="bsel-drop" id="bsel-drop-${idx}">
+          <div class="bsel-opt${!b.ejercicio_id?' sel':''}" onclick="bselPick(${idx},'','')">Selecciona ejercicio…</div>
+          ${ejsCat.map(e=>`<div class="bsel-opt${e.id===b.ejercicio_id?' sel':''}" onclick="bselPick(${idx},'${e.id.replace(/'/g,"\\'")}','${e.nombre.replace(/'/g,"\\'")}\u0027)">${e.nombre}</div>`).join('')}
+        </div>
+      </div>
+      <button class="btn-info-ej" id="btn-info-${idx}" onclick="mostrarInfoEj(${idx})" title="Ver descripción">ℹ</button>
+    </div>
+    <div class="bloque-row">
+      <div class="bdur-wrap">
+        <div class="bdur-trigger" id="bdur-trig-${idx}" onclick="bdurToggle(${idx})">
+          <span id="bdur-lbl-${idx}">${b.duracion||'10 min'}</span>
+          <span class="bsel-arrow">∨</span>
+        </div>
+        <div class="bdur-drop" id="bdur-drop-${idx}">
+          ${['5 min','10 min','15 min','20 min','25 min','30 min','45 min'].map(d=>`<div class="bdur-opt${d===(b.duracion||'10 min')?' sel':''}" onclick="bdurPick(${idx},'${d}')">${d}</div>`).join('')}
+        </div>
+      </div>
+      <label class="no-real-lbl"><input type="checkbox" ${!b.realizado?'checked':''} onchange="_bloques[${idx}].realizado=!this.checked"> No realizado</label>
+    </div>`;
+  return div;
+}
+
+function moverBloque(idx,dir){
+  const ni=idx+dir;if(ni<0||ni>=_bloques.length)return;
+  [_bloques[idx],_bloques[ni]]=[_bloques[ni],_bloques[idx]];
+  _bloques.forEach((b,i)=>b.orden=i);renderBloquesForm();
+}
+function eliminarBloque(idx){_bloques.splice(idx,1);_bloques.forEach((b,i)=>b.orden=i);renderBloquesForm()}
+function addBloque(cat){
+  const ejs=_ejercicios[cat]||[];
+  _bloques.push({ejercicio_id:ejs[0]?.id||null,nombre:ejs[0]?.nombre||'',categoria:cat,orden:_bloques.length,duracion:'15 min',realizado:true});
+  renderBloquesForm();
+  document.getElementById('bloques-container').lastElementChild?.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+async function guardar(){
+  const grupoId=document.getElementById('cl-grupo').value||null;
+  const fecha=document.getElementById('cl-fecha').value;
+  if(!fecha){toast('Selecciona una fecha','warn');return}
+  const tipoClase=cselGetValue('cl-tipo-csel')||'Grupo';
+  const pistaVal=(()=>{const v=cselGetValue('cl-pista-csel');return v&&v!=='— Sin pista —'?v:null;})();
+  const clase={id:document.getElementById('cl-id').value||undefined,grupo_id:grupoId,fecha,hora:getHora(),estado:_estadoSel,tipo_clase:tipoClase,duracion:parseInt(document.getElementById('cl-duracion').value),notas:document.getElementById('cl-notas').value.trim()||null,pista:pistaVal};
+
+  try{
+    const saved = await saveClase(clase);
+    const claseId = saved.id;
+
+    if(!ESTADOS_SIMPLES.includes(_estadoSel)){
+      await _sb.from('clase_asistencia').delete().eq('clase_id',claseId);
+      const checks=[...document.querySelectorAll('#lista-asistencia .al-check')];
+      if(checks.length){await _sb.from('clase_asistencia').insert(checks.map(el=>({clase_id:claseId,alumno_id:el.dataset.id,asistio:el.classList.contains('checked')})))}
+      await _sb.from('clase_ejercicios').delete().eq('clase_id',claseId);
+      const rows=_bloques.filter(b=>b.ejercicio_id).map(b=>({clase_id:claseId,ejercicio_id:b.ejercicio_id,orden:b.orden,duracion:b.duracion,realizado:b.realizado}));
+      if(rows.length){
+        await _sb.from('clase_ejercicios').insert(rows);
+        for(const b of _bloques.filter(b=>b.ejercicio_id&&b.realizado)){
+          const{data:ej}=await _sb.from('ejercicios').select('usos').eq('id',b.ejercicio_id).single();
+          if(ej)await _sb.from('ejercicios').update({usos:(ej.usos||0)+1}).eq('id',b.ejercicio_id);
+        }
+      }
+    }
+
+    cerrarWizard();
+    toast('Clase guardada ✓','ok');
+    await cargar();
+
+    // Abrir sheet de reserva de pista
+    await abrirSheetReservaPista(saved);
+
+  }catch(e){toast('Error: '+(e.message||JSON.stringify(e)),'err');console.error(e)}
+}
+
+// ── Sheet reserva de pista ────────────────────────────────
+let _rpClase = null; // clase guardada pendiente de reserva
+
+async function abrirSheetReservaPista(clase) {
+  _rpClase = clase;
+
+  // Poblar selector de pistas
+  const sel = document.getElementById('rp-pista');
+  const pistas = _cfgPistas.length ? _cfgPistas : ['Pista 1','Pista 2','Pista 3'];
+  sel.innerHTML = '<option value="">— Selecciona pista —</option>' +
+    pistas.map(p=>`<option value="${p}" ${clase.pista===p?'selected':''}>${p}</option>`).join('');
+  nselInit('rp-pista');
+  nselSync('rp-pista');
+
+  // Horas
+  const horaFin = _calcHoraFin(clase.hora, clase.duracion||60);
+  document.getElementById('rp-hora-inicio').textContent = clase.hora?.slice(0,5)||'—';
+  document.getElementById('rp-hora-fin').textContent = horaFin||'—';
+
+  // Monitor del grupo — csel con lista de monitores
+  const grupo = _grupos.find(g=>g.id===clase.grupo_id);
+  const monitorActual = grupo?.monitor || '';
+  cselRender(
+    'rp-monitor-csel',
+    ['— Sin monitor —', ..._cfgMonitores],
+    _cfgMonitores.includes(monitorActual) ? monitorActual : '— Sin monitor —',
+    '— Sin monitor —',
+    null,
+    (val, lista) => { _cfgMonitores = lista.filter(x=>x!=='— Sin monitor —'); saveConfig('monitores', _cfgMonitores).catch(console.error); },
+    (val, lista) => { _cfgMonitores = lista.filter(x=>x!=='— Sin monitor —'); saveConfig('monitores', _cfgMonitores).catch(console.error); },
+    '+ Añadir monitor…'
+  );
+
+  // Info semana
+  const infoEl = document.getElementById('rp-semana-info');
+  const semana = await getSemanaParaFecha(clase.fecha);
+  if(semana){
+    infoEl.textContent = `✓ Semana ${semana.fecha_inicio} ya existe`;
+    infoEl.style.display = 'block';
+  } else {
+    infoEl.textContent = `ℹ️ Se creará la semana para ${clase.fecha} automáticamente`;
+    infoEl.style.color = '#2563eb';
+    infoEl.style.background = '#eff6ff';
+    infoEl.style.borderColor = '#bfdbfe';
+    infoEl.style.display = 'block';
+  }
+
+  // Buscar si ya tiene bloque (edición)
+  const { data: bloqueExistente } = await _sb.from('bloques_pista').select('id').eq('clase_id', clase.id).maybeSingle();
+  const btn = document.getElementById('rp-btn-confirmar');
+  btn.textContent = bloqueExistente ? '🏟 Actualizar reserva' : '🏟 Reservar';
+  btn.dataset.bloqueId = bloqueExistente?.id || '';
+
+  openSheet('sh-reserva-pista');
+}
+
+async function confirmarReservaPista() {
+  if(!_rpClase) return;
+  const pista = document.getElementById('rp-pista').value;
+  if(!pista){ toast('Selecciona una pista','warn'); return; }
+
+  const monitorVal = cselGetValue('rp-monitor-csel');
+  const monitor = (monitorVal && monitorVal !== '— Sin monitor —') ? monitorVal : null;
+  const horaFin = _calcHoraFin(_rpClase.hora, _rpClase.duracion||60);
+  const fecha = _rpClase.fecha;
+
+  try {
+    // Obtener o crear semana
+    let semana = await getSemanaParaFecha(fecha);
+    if(!semana){
+      const lunes = lunesDeFecha(fecha);
+      const domingo = new Date(lunes);
+      domingo.setDate(domingo.getDate()+6);
+      semana = await saveSemana({
+        fecha_inicio: lunes,
+        fecha_fin: domingo.toISOString().slice(0,10),
+        num_pistas: Math.max(3, _cfgPistas.length)
+      });
+    }
+
+    const fechaDate = new Date(fecha+'T00:00:00');
+    const ds = fechaDate.getDay();
+    const diaConv = ds===0?6:ds-1;
+    const grupo = _grupos.find(g=>g.id===_rpClase.grupo_id);
+
+    const bloqueRow = {
+      semana_id: semana.id,
+      dia: String(diaConv),
+      pista,
+      hora_inicio: _rpClase.hora,
+      hora_fin: horaFin,
+      tipo: 'Clase',
+      grupo_id: _rpClase.grupo_id||null,
+      monitor,
+      actividad: grupo?.nombre||_rpClase.tipo_clase||'Clase',
+      clase_id: _rpClase.id,
+      color: ['Pista 1','Pista 2','Pista 3','Pista 4','Pista 5','Pista 6']
+              .indexOf(pista) >= 0
+              ? ['azul','verde','naranja','morado','rojo','gris'][['Pista 1','Pista 2','Pista 3','Pista 4','Pista 5','Pista 6'].indexOf(pista)]
+              : 'azul',
+    };
+
+    const bloqueId = document.getElementById('rp-btn-confirmar').dataset.bloqueId;
+    if(bloqueId){
+      // Actualizar bloque existente
+      await _sb.from('bloques_pista').update(bloqueRow).eq('id', bloqueId);
+    } else {
+      const { id:_, ...sinId } = bloqueRow;
+      await _sb.from('bloques_pista').insert(sinId);
+    }
+
+    closeSheet('sh-reserva-pista');
+    toast('Pista reservada ✓','ok');
+  } catch(e){ toast('Error reservando pista: '+e.message,'err'); console.error(e); }
+}
+
+function lunesDeFecha(fechaStr) {
+  const d = new Date(fechaStr+'T00:00:00');
+  const dia = d.getDay(); // 0=dom
+  const diff = dia===0 ? -6 : 1-dia;
+  d.setDate(d.getDate()+diff);
+  return d.toISOString().slice(0,10);
+}
+
+function _calcHoraFin(horaInicio, durMin){
+  if(!horaInicio) return null;
+  const [h,m]=horaInicio.split(':').map(Number);
+  const total=(h*60+m+durMin);
+  return String(Math.floor(total/60)).padStart(2,'0')+':'+String(total%60).padStart(2,'0');
+}
+
+function confirmarEliminar(id){
+  document.getElementById('confirm-texto').textContent='¿Eliminar esta clase? Se eliminarán también los datos de asistencia, ejercicios y la reserva de pista asociada si existe.';
+  document.getElementById('confirm-overlay').classList.add('open');
+  document.getElementById('confirm-ok').onclick=async()=>{
+    document.getElementById('confirm-overlay').classList.remove('open');
+    try{
+      // Eliminar bloque de pista vinculado si existe
+      await _sb.from('bloques_pista').delete().eq('clase_id', id);
+      await deleteClase(id);
+      toast('Eliminada','ok');
+      await cargar();
+    }catch(e){toast('Error','err');console.error(e)}
+  };
+}
+
+async function notificar(claseId) {
+  const clase = _clases.find(c => c.id === claseId);
+  if (!clase) return;
+  const todosAlumnos = await getAlumnos();
+  let alumnos;
+  if (clase.grupo_id) {
+    alumnos = todosAlumnos.filter(a => a.grupo_id === clase.grupo_id);
+  } else {
+    // Clase sin grupo: usar los alumnos de la asistencia guardada
+    const idsAsist = (clase.clase_asistencia||[]).map(a => a.alumno_id);
+    alumnos = idsAsist.length
+      ? todosAlumnos.filter(a => idsAsist.includes(a.id))
+      : todosAlumnos.filter(a => !a.grupo_id);
+  }
+  const fecha = formatFecha(clase.fecha);
+  const motivo = clase.notas ? ` Motivo: ${clase.notas}` : '';
+  const msg = encodeURIComponent(`Hola! La clase del ${fecha} ha sido ${clase.estado.toLowerCase()}.${motivo} Disculpa las molestias.`);
+
+  // Emails
+  const emails = alumnos.filter(a => a.email).map(a => a.email);
+  // Teléfonos WhatsApp (solo primero — wa.me no soporta múltiples)
+  const telefonos = alumnos.filter(a => a.telefono).map(a => a.telefono.replace(/\s/g,''));
+
+  if (!emails.length && !telefonos.length) {
+    toast('Sin emails ni teléfonos en el grupo','warn'); return;
+  }
+
+  // Mostrar opciones
+  const opciones = [];
+  if (emails.length) opciones.push(`📧 Email (${emails.length} alumnos)`);
+  if (telefonos.length) opciones.push(`💬 WhatsApp (${telefonos.length} alumnos)`);
+
+  // Abrir sheet de notificación
+  _notifClase = { emails, telefonos, msg };
+  document.getElementById('notif-emails').textContent = emails.length ? emails.join(', ') : '—';
+  document.getElementById('notif-wa').textContent = telefonos.length ? telefonos.join(', ') : '—';
+  document.getElementById('notif-msg').value = decodeURIComponent(msg);
+  openSheet('sh-notif');
+}
+
+let _notifClase = {};
+
+function enviarEmail() {
+  if (!_notifClase.emails?.length) { toast('Sin emails','warn'); return; }
+  const asunto = encodeURIComponent('Clase cancelada / festivo');
+  const cuerpo = encodeURIComponent(document.getElementById('notif-msg').value);
+  window.open(`mailto:${_notifClase.emails.join(',')}?subject=${asunto}&body=${cuerpo}`);
+}
+function enviarWA() {
+  if (!_notifClase.telefonos?.length) { toast('Sin teléfonos','warn'); return; }
+  const msg = encodeURIComponent(document.getElementById('notif-msg').value);
+  // Abre WhatsApp para el primer teléfono (limitación de wa.me)
+  window.open(`https://wa.me/${_notifClase.telefonos[0]}?text=${msg}`);
+  if (_notifClase.telefonos.length > 1) toast(`Repite para los ${_notifClase.telefonos.length-1} teléfonos restantes`,'warn');
+}
+
+async function cargar(){
+  showLoading('lista-clases');
+  const{data,error}=await _sb.from('clases').select('*, clase_ejercicios(*, ejercicios(nombre,categoria)), clase_asistencia(*, alumnos(nombre))').eq('escuela_id',Store.escuelaId).order('fecha',{ascending:false});
+  if(error){showError('lista-clases','Error al cargar');return}
+  _clases=data||[];
+  // Rellenar filtro año con los años presentes en las clases
+  const anios=[...new Set(_clases.map(c=>c.fecha?.slice(0,4)).filter(Boolean))].sort((a,b)=>b-a);
+  const selA=document.getElementById('filtro-anio');
+  if(selA){
+    const cur=selA.value;
+    selA.innerHTML='<option value="">Todos</option>'+anios.map(a=>`<option value="${a}">${a}</option>`).join('');
+    if(cur) selA.value=cur;
+  }
+  filtrar();
+}
+
+async function cargarEjercicios(){
+  const todos=await getEjercicios();
+  _ejercicios={};CATS.forEach(c=>_ejercicios[c]=[]);
+  todos.forEach(e=>{if(_ejercicios[e.categoria])_ejercicios[e.categoria].push(e)});
+}
+
+async function init(){
+  // Anclar esta página en el historial para que el botón atrás del móvil
+  // no navegue fuera (ej: a ejercicios.html si venía de ahí)
+  history.replaceState({ page: 'clases' }, '');
+  buildHoraPickers();
+  renderNav('clases');
+  await initStore();
+  renderHeader({titulo:'Escuela de Pádel',subtitulo:'Clases',icono:'icons/clases.png',botonDerecho:'menu'});
+  const cfgClase = await getConfigMultiple(['tipos_clase','pistas','monitores']);
+  _cfgPistas    = cfgClase.pistas    || [];
+  _cfgMonitores = cfgClase.monitores || [];
+  if (cfgClase.tipos_clase && cfgClase.tipos_clase.length) _cfgTiposClase = cfgClase.tipos_clase;
+  fillTipoClaseSelect('Grupo');
+  // Inicializar csel pista (vacío hasta que se abra el wizard)
+  _renderPistaCsel('');
+  // onchange grupo → autorellenar pista y horario del grupo
+  document.getElementById('cl-grupo').addEventListener('change', function(){
+    const g = _grupos.find(x=>x.id===this.value);
+    if(g){
+      if(g.pista) cselSetValue('cl-pista-csel', g.pista);
+      if(g.hora_inicio) setHora(g.hora_inicio);
+      if(g.duracion || (g.hora_inicio && g.hora_fin)){
+        const dur = g.duracion || _diffMin(g.hora_inicio, g.hora_fin);
+        if(dur) document.getElementById('cl-duracion').value=String(dur);
+      }
+      _actualizarBloqueInfo();
+    }
+  });
+  document.getElementById('cl-fecha').addEventListener('change', _actualizarBloqueInfo);
+  _grupos=await getGrupos();
+  const sg=document.getElementById('cl-grupo'),sf=document.getElementById('filtro-grupo');
+  _grupos.forEach(g=>{sg.innerHTML+=`<option value="${g.id}">${g.nombre}</option>`;sf.innerHTML+=`<option value="${g.id}">${g.nombre}</option>`;});
+  sf.innerHTML += `<option value="__sin_grupo__">Sin grupo</option>`;
+  await Promise.all([cargar(),cargarEjercicios()]);
+
+  // ── Inicializar selects custom ──
+  nselInit('filtro-dia');
+  nselInit('filtro-mes');
+  nselInit('filtro-anio');
+  nselInit('filtro-estado');
+  nselInit('filtro-grupo');
+  nselInit('cl-grupo');
+  nselInit('cl-duracion');
+  nselInit('cl-estado-sel');
+}
+
+function _diffMin(h1, h2){
+  if(!h1||!h2) return null;
+  const [h1h,h1m]=h1.split(':').map(Number);
+  const [h2h,h2m]=h2.split(':').map(Number);
+  const d=(h2h*60+h2m)-(h1h*60+h1m);
+  return d>0?d:null;
+}
+
+async function _actualizarBloqueInfo(){
+  const pista=cselGetValue('cl-pista-csel');
+  const fecha=document.getElementById('cl-fecha').value;
+  const wrap=document.getElementById('bloque-auto-wrap');
+  const info=document.getElementById('bloque-auto-info');
+  if(!pista||!fecha||document.getElementById('cl-id').value){wrap.style.display='none';return;}
+  const semana=await getSemanaParaFecha(fecha);
+  if(semana){
+    const fechaDate=new Date(fecha+'T00:00:00');
+    const dias=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+    const diaConv=fechaDate.getDay()===0?6:fechaDate.getDay()-1;
+    info.innerHTML=`📋 Se creará bloque en <strong>${pista}</strong> · ${dias[diaConv]}`;
+    wrap.style.display='block';
+  } else {
+    info.innerHTML=`⚠️ Sin semana de pistas para esta fecha`;
+    wrap.style.display='block';
+  }
+}
+
+function abrirInfo() {
+  openSheet('sh-info-pagina');
+}
+
+init();
+
+function bselToggle(idx){
+  const drop=document.getElementById('bsel-drop-'+idx);
+  const trig=document.getElementById('bsel-trig-'+idx);
+  if(!drop)return;
+  const open=drop.classList.contains('open');
+  document.querySelectorAll('.bsel-drop').forEach(d=>d.classList.remove('open'));
+  document.querySelectorAll('.bsel-trigger').forEach(t=>t.classList.remove('open'));
+  if(!open){drop.classList.add('open');trig.classList.add('open');
+    setTimeout(()=>{const s=drop.querySelector('.sel');if(s)s.scrollIntoView({block:'nearest'});},20);}
+}
+function bselPick(idx,id,nombre){
+  _bloques[idx].ejercicio_id=id;_bloques[idx].nombre=nombre;
+  const lbl=document.getElementById('bsel-lbl-'+idx);
+  if(lbl)lbl.textContent=nombre||'Selecciona ejercicio…';
+  const drop=document.getElementById('bsel-drop-'+idx);
+  const trig=document.getElementById('bsel-trig-'+idx);
+  if(drop){drop.querySelectorAll('.bsel-opt').forEach(o=>o.classList.toggle('sel',o.textContent.trim()===nombre||(!id&&o.dataset.empty)));drop.classList.remove('open');}
+  if(trig)trig.classList.remove('open');
+  if(id)actualizarBtnInfo(idx,id);
+}
+function bdurToggle(idx){
+  const drop=document.getElementById('bdur-drop-'+idx);
+  const trig=document.getElementById('bdur-trig-'+idx);
+  if(!drop)return;
+  const open=drop.classList.contains('open');
+  document.querySelectorAll('.bdur-drop').forEach(d=>d.classList.remove('open'));
+  document.querySelectorAll('.bdur-trigger').forEach(t=>t.classList.remove('open'));
+  if(!open){drop.classList.add('open');trig.classList.add('open');}
+}
+function bdurPick(idx,val){
+  _bloques[idx].duracion=val;
+  const lbl=document.getElementById('bdur-lbl-'+idx);
+  if(lbl)lbl.textContent=val;
+  const drop=document.getElementById('bdur-drop-'+idx);
+  const trig=document.getElementById('bdur-trig-'+idx);
+  if(drop){drop.querySelectorAll('.bdur-opt').forEach(o=>o.classList.toggle('sel',o.textContent.trim()===val));drop.classList.remove('open');}
+  if(trig)trig.classList.remove('open');
+}
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.bsel-wrap')&&!e.target.closest('.bdur-wrap')){
+    document.querySelectorAll('.bsel-drop,.bdur-drop').forEach(d=>d.classList.remove('open'));
+    document.querySelectorAll('.bsel-trigger,.bdur-trigger').forEach(t=>t.classList.remove('open'));
+  }
+});
+</script>
+</body>
+</html>

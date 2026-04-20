@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>Alumnos — Escuela de Pádel</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* ── Avatar foto ── */
+    .av-foto { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 2px solid var(--borde); }
+    .av-foto-lg { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; border: 2px solid var(--borde); display: block; margin: 0 auto 6px; }
+
+    /* ── Foto upload botones ── */
+    .foto-preview-wrap { display: flex; flex-direction: column; align-items: center; margin-bottom: 10px; }
+    .foto-btns { display: flex; gap: 8px; width: 100%; }
+    .foto-btn  { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px; border-radius: 10px; font-size: 12px; font-weight: 800; cursor: pointer; border: 1.5px solid var(--borde); background: #f8fafc; color: var(--texto); font-family: inherit; }
+    .foto-btn:active { background: #e2e8f0; }
+    #foto-file-input { display: none; }
+
+    /* ── Nuevo inline ── */
+    .nuevo-inline { display: flex; gap: 6px; align-items: center; margin: -4px 0 8px; animation: fadeIn .15s ease; }
+    .nuevo-inline .finp { flex: 1; }
+    .nuevo-inline .sbtn { padding: 9px 12px; min-width: 0; flex-shrink: 0; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:translateY(0); } }
+
+    /* ── Detalle alumno expandido ── */
+    .det-foto { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; border: 2px solid var(--borde); }
+    .alumno-header-exp { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .alumno-header-info { flex: 1; }
+    .alumno-header-nombre { font-size: 15px; font-weight: 900; color: var(--texto); }
+    .alumno-header-sub { font-size: 11px; color: var(--sutil); font-weight: 600; margin-top: 2px; }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <div id="header-container"></div>
+  <nav id="nav-container"></nav>
+
+  <main class="content">
+    <div class="sec">
+      <img src="icons/alumnos.png">
+      <div class="sec-title">Alumnos <button onclick="abrirInfo()" style="background:none;border:none;color:#2563eb;font-size:13px;font-weight:800;cursor:pointer;padding:0;font-family:Nunito,sans-serif">Info.</button></div>
+      
+<div class="sec-count" id="contador">—</div>
+    </div>
+
+    <button class="btn-anadir" onclick="abrirNuevo()">
+      <div class="btn-anadir-plus">+</div>
+      Añadir alumno
+    </button>
+
+    <!-- Buscador -->
+    <div class="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input id="buscador" placeholder="Buscar alumno…" oninput="filtrar()">
+    </div>
+
+    <!-- Filtros desplegables -->
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <div style="flex:1">
+        <div class="filter-label">Nivel</div>
+        <div class="fsel-wrap"><select class="fsel" id="filtro-nivel" onchange="filtrar()">
+          <option value="">Todos</option>
+        </select></div>
+      </div>
+      <div style="flex:1">
+        <div class="filter-label">Grupo</div>
+        <div class="fsel-wrap"><select class="fsel" id="filtro-grupo" onchange="filtrar()">
+          <option value="">Todos</option>
+        </select></div>
+      </div>
+      <div style="flex:1">
+        <div class="filter-label">Estado</div>
+        <div class="fsel-wrap"><select class="fsel" id="filtro-estado" onchange="filtrar()">
+          <option value="activos">Activos</option>
+          <option value="todos">Todos</option>
+          <option value="inactivos">Bajas</option>
+        </select></div>
+      </div>
+    </div>
+
+    <div id="lista-alumnos"><div class="loading"><div class="spinner"></div></div></div>
+  </main>
+
+  <!-- ── Sheet alumno ── -->
+  <div class="overlay" id="sh-alumno">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title" id="sh-titulo">Nuevo alumno</div>
+      <input type="hidden" id="al-id">
+      <input type="hidden" id="al-foto-actual">
+
+      <!-- Nombre -->
+      <div class="fgrp">
+        <div class="flbl">Nombre completo *</div>
+        <input class="finp" id="al-nombre" placeholder="Ej: María García">
+      </div>
+
+      <!-- Nivel -->
+      <div class="fgrp">
+        <div class="flbl">Nivel *</div>
+        <div class="csel-wrap" id="al-nivel-csel"></div>
+      </div>
+
+      <!-- Grupo -->
+      <div class="fgrp">
+        <div class="flbl">Grupo</div>
+        <div class="fsel-wrap"><select class="fsel" id="al-grupo"><option value="">Sin grupo</option></select></div>
+      </div>
+
+      <!-- Teléfono y email -->
+      <div class="frow">
+        <div class="fgrp">
+          <div class="flbl">Teléfono</div>
+          <input class="finp" id="al-telefono" placeholder="6xx xxx xxx" type="tel">
+        </div>
+        <div class="fgrp">
+          <div class="flbl">Email</div>
+          <input class="finp" id="al-email" placeholder="email@ejemplo.com" type="email">
+        </div>
+      </div>
+
+      <!-- Fecha nacimiento -->
+      <div class="fgrp">
+        <div class="flbl">Fecha de nacimiento</div>
+        <input class="finp" id="al-fnac" type="date">
+      </div>
+
+      <!-- Foto de perfil -->
+      <div class="fgrp">
+        <div class="flbl">Foto de perfil <span style="font-weight:600;text-transform:none;font-size:10px">(opcional)</span></div>
+        <button class="btn-anadir" onclick="abrirSelectorFoto()" id="btn-foto-selector" style="margin-bottom:0">
+          <div id="foto-btn-preview" style="width:32px;height:32px;border-radius:8px;background:#dbeafe;display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden;flex-shrink:0">👤</div>
+          <div style="flex:1;text-align:left">
+            <div id="foto-btn-main" style="font-size:13px;font-weight:800;color:#2563eb">Elegir foto o avatar</div>
+            <div id="foto-btn-sub" style="font-size:11px;font-weight:600;color:#64748b;margin-top:1px">Cámara, galería o avatar</div>
+          </div>
+          <span style="font-size:14px;color:#93c5fd">›</span>
+        </button>
+        <input type="hidden" id="al-foto-url">
+        <input type="file" id="foto-file-input" accept="image/*" onchange="onFotoChange(event)" style="display:none">
+        <input type="hidden" id="foto-capture-input">
+      </div>
+
+      <div class="sheet-btns">
+        <button class="sbtn" onclick="closeSheet('sh-alumno')">Cancelar</button>
+        <button class="sbtn prim" onclick="guardar()">✓ Guardar alumno</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirmación -->
+  <div class="confirm-overlay" id="confirm-overlay">
+    <div class="confirm-box">
+      <div class="confirm-titulo">¿Eliminar alumno?</div>
+      <div class="confirm-texto" id="confirm-texto">Esta acción no se puede deshacer.</div>
+      <div class="confirm-btns">
+        <button class="cbtn" onclick="document.getElementById('confirm-overlay').classList.remove('open')">Cancelar</button>
+        <button class="cbtn danger" id="confirm-ok">Eliminar</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+
+  <!-- Sheet info página -->
+  <div class="overlay" id="sh-info-pagina">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">Alumnos</div>
+      <div style="font-size:14px;font-weight:600;color:var(--sub);line-height:1.65;padding-bottom:8px">Gestiona todos los alumnos de tu escuela. Puedes crear fichas con sus datos, asignarles un grupo y nivel, ver su historial de cobros y notificarles por email o WhatsApp cuando una clase cambia.</div>
+      <div class="sheet-btns">
+        <button class="sbtn prim" style="flex:1" onclick="closeSheet('sh-info-pagina')">Entendido</button>
+      </div>
+    </div>
+  </div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/store.js"></script>
+<script src="js/ui.js"></script>
+<script>
+
+let _alumnos     = [];
+let _grupos      = [];
+let _filtroNivel = '';
+let _cfgNiveles  = ['Principiante', 'Intermedio', 'Avanzado'];
+let _fotoFile    = null;   // File pendiente de subir
+
+// ── Filtros ────────────────────────────────────
+function filtrar() {
+  const q          = (document.getElementById('buscador').value || '').toLowerCase().trim();
+  const filtNivel  = document.getElementById('filtro-nivel')?.value  || '';
+  const filtGrupo  = document.getElementById('filtro-grupo')?.value  || '';
+  const filtEstado = document.getElementById('filtro-estado')?.value || 'todos';
+
+  const lista = _alumnos
+    .filter(a => {
+      if (filtEstado === 'activos'   && a.activo === false) return false;
+      if (filtEstado === 'inactivos' && a.activo !== false) return false;
+      if (filtNivel && a.nivel !== filtNivel) return false;
+      if (filtGrupo === '__sin_grupo__') { if (a.grupo_id) return false; }
+      else if (filtGrupo && a.grupo_id !== filtGrupo) return false;
+      if (!q) return true;
+      const grupo = _grupos.find(g => g.id === a.grupo_id);
+      const hay = [a.nombre, a.nivel, a.telefono, a.email, grupo?.nombre].filter(Boolean).join(' ').toLowerCase();
+      return q.split(/\s+/).filter(Boolean).some(p => hay.includes(p));
+    })
+    .sort((a, b) => {
+      // Activos primero, inactivos al final
+      if (a.activo === false && b.activo !== false) return 1;
+      if (a.activo !== false && b.activo === false) return -1;
+      return a.nombre.localeCompare(b.nombre, 'es');
+    });
+  renderLista(lista);
+}
+
+// ── Render ─────────────────────────────────────
+function renderLista(alumnos) {
+  document.getElementById('contador').textContent = alumnos.length;
+  const el = document.getElementById('lista-alumnos');
+  if (!alumnos.length) { showEmpty('lista-alumnos', 'Sin alumnos con ese filtro'); return; }
+
+  el.innerHTML = alumnos.map(a => {
+    const grupo = _grupos.find(g => g.id === a.grupo_id);
+    const avatarEl = a.foto_url
+      ? `<img class="av-foto" src="${a.foto_url}" alt="${a.nombre}" onerror="this.style.display='none'">`
+      : avatarHTML(a.nombre);
+    const edad = a.fecha_nacimiento ? calcEdad(a.fecha_nacimiento) : null;
+
+    const inactivo = a.activo === false;
+    return `
+    <div class="card" id="card-${a.id}" style="border-left-color:${inactivo ? '#94a3b8' : chipColor(a.nivel,'niveles').tx};opacity:${inactivo ? '0.55' : '1'}">
+      <div class="card-main" onclick="toggleCard('${a.id}')">
+        ${avatarEl}
+        <div class="ci">
+          <div class="cn">${a.nombre}${inactivo ? ' <span style="font-size:10px;color:#94a3b8;font-weight:700">(Baja)</span>' : ''}</div>
+          <div class="cm">
+            ${chipNivel(a.nivel)}
+            ${grupo ? `<span class="chip" style="background:${chipColor(grupo.nombre).bg};color:${chipColor(grupo.nombre).tx}">${grupo.nombre}</span>` : '<span class="chip cgr">Sin grupo</span>'}
+            ${edad  ? `<span class="chip cgr">${edad} años</span>` : ''}
+          </div>
+        </div>
+        <div class="chev" id="chev-${a.id}">▼</div>
+      </div>
+      <div class="exp" id="exp-${a.id}">
+        <div class="dl">Teléfono</div><div class="dv">${a.telefono || '—'}</div>
+        <div class="dl">Email</div><div class="dv">${a.email || '—'}</div>
+        <div class="dl">Nacimiento</div><div class="dv">${a.fecha_nacimiento ? formatFechaNac(a.fecha_nacimiento)+(edad?' ('+edad+' años)':''): '—'}</div>
+        <div class="dl">Grupo</div><div class="dv">${grupo ? grupo.nombre : 'Sin grupo'}</div>
+        <!-- Historial — se carga lazy al abrir -->
+        <div id="hist-${a.id}" style="margin-top:6px"></div>
+
+        <div class="abtns">
+          <button class="abtn" onclick="window.location.href='cobros.html?alumno_id=${a.id}'">💰 Cobros</button>
+          <button class="abtn prim" onclick="abrirEditarId('${a.id}')">✏️ Editar</button>
+          ${inactivo
+            ? `<button class="abtn" style="background:#f0fdf4;color:#16a34a;border-color:#bbf7d0" onclick="toggleBaja('${a.id}',true)">✓ Dar alta</button>`
+            : `<button class="abtn" style="background:#fff7ed;color:#f59e0b;border-color:#fde68a" onclick="toggleBaja('${a.id}',false)">⏸ Dar baja</button>`
+          }
+          <button class="abtn dang" onclick="confirmarEliminar('${a.id}','${a.nombre.replace(/'/g,"\\'")}')">🗑</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Fechas ─────────────────────────────────────
+function calcEdad(fechaNac) {
+  const hoy  = new Date();
+  const nac  = new Date(fechaNac);
+  let edad   = hoy.getFullYear() - nac.getFullYear();
+  const m    = hoy.getMonth() - nac.getMonth();
+  if (m < 0 || (m === 0 && hoy.getDate() < nac.getDate())) edad--;
+  return edad;
+}
+function formatFechaNac(iso) {
+  if (!iso) return '';
+  const [y, m, d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+// ── Nivel dinámico (csel) ──────────────────────
+function renderNivelCsel(valorActual) {
+  cselRender(
+    'al-nivel-csel',
+    _cfgNiveles,
+    valorActual || _cfgNiveles[0] || '',
+    null,
+    null, // onChange — no hace falta callback extra
+    (val, lista) => {
+      _cfgNiveles = lista;
+      saveConfig('niveles', lista).catch(console.error);
+      actualizarFiltrosNivel();
+    },
+    (val, lista) => {
+      if (!_cfgNiveles.includes(val)) _cfgNiveles.push(val);
+      _cfgNiveles = lista;
+      saveConfig('niveles', lista).catch(console.error);
+      actualizarFiltrosNivel();
+    },
+    '+ Añadir nivel…'
+  );
+}
+
+function actualizarFiltrosNivel() {
+  const sel = document.getElementById('filtro-nivel');
+  if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Todos</option>' +
+    _cfgNiveles.map(n => `<option value="${n}">${n}</option>`).join('');
+  if (cur) sel.value = cur;
+}
+
+// ── Foto ───────────────────────────────────────
+// ── Avatares disponibles ──
+const AVATARES_H = Array.from({length:16}, (_,i) => `icons/av_m${String(i+1).padStart(2,'0')}.png`);
+const AVATARES_M = Array.from({length:16}, (_,i) => `icons/av_f${String(i+1).padStart(2,'0')}.png`);
+let _avatarSeleccionado = null;
+let _filtroAvatar = 'h';
+
+function filtrarAvatares(tipo) {
+  _filtroAvatar = tipo;
+  const btnH = document.getElementById('btn-filtro-h');
+  const btnM = document.getElementById('btn-filtro-m');
+  if (tipo === 'h') {
+    btnH.style.background='#2563eb'; btnH.style.color='#fff'; btnH.style.borderColor='#2563eb';
+    btnM.style.background='#f8fafc'; btnM.style.color='#64748b'; btnM.style.borderColor='#e2e8f0';
+  } else {
+    btnM.style.background='#2563eb'; btnM.style.color='#fff'; btnM.style.borderColor='#2563eb';
+    btnH.style.background='#f8fafc'; btnH.style.color='#64748b'; btnH.style.borderColor='#e2e8f0';
+  }
+  renderAvatarGrid();
+}
+
+function renderAvatarGrid() {
+  const lista = _filtroAvatar === 'h' ? AVATARES_H : AVATARES_M;
+  const grid = document.getElementById('avatares-grid');
+  grid.innerHTML = lista.map(src => `
+    <div onclick="selAvatar(this,'${src}')" style="aspect-ratio:1;border-radius:12px;overflow:hidden;cursor:pointer;border:2.5px solid transparent;transition:all .12s">
+      <img src="${src}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.style.display='none'">
+    </div>`).join('');
+}
+
+function abrirSelectorFoto() {
+  _avatarSeleccionado = null;
+  _filtroAvatar = 'h';
+  openSheet('sh-foto-avatar');
+  // Resetear botones
+  setTimeout(() => { filtrarAvatares('h'); }, 50);
+}
+
+function selAvatar(el, src) {
+  document.querySelectorAll('#avatares-grid > div').forEach(d => {
+    d.style.borderColor = 'transparent';
+    d.style.transform = '';
+  });
+  el.style.borderColor = '#2563eb';
+  el.style.transform = 'scale(1.1)';
+  _avatarSeleccionado = src;
+}
+
+function confirmarFoto() {
+  if (_avatarSeleccionado) {
+    document.getElementById('al-foto-url').value = _avatarSeleccionado;
+    actualizarBtnFoto(_avatarSeleccionado, 'Avatar seleccionado');
+    _fotoFile = null;
+  }
+  closeSheet('sh-foto-avatar');
+}
+
+function elegirCamara() {
+  const input = document.getElementById('foto-file-input');
+  input.setAttribute('capture', 'environment');
+  input.click();
+  closeSheet('sh-foto-avatar');
+}
+
+function elegirGaleria() {
+  const input = document.getElementById('foto-file-input');
+  input.removeAttribute('capture');
+  input.click();
+  closeSheet('sh-foto-avatar');
+}
+
+function onFotoChange(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  _fotoFile = file;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    actualizarBtnFoto(ev.target.result, 'Foto seleccionada');
+    document.getElementById('al-foto-url').value = '';
+  };
+  reader.readAsDataURL(file);
+}
+
+function actualizarBtnFoto(src, label) {
+  const prev = document.getElementById('foto-btn-preview');
+  prev.innerHTML = `<img src="${src}" style="width:100%;height:100%;object-fit:cover;border-radius:6px">`;
+  document.getElementById('foto-btn-main').textContent = label;
+  document.getElementById('foto-btn-sub').textContent = 'Toca para cambiar';
+}
+
+function mostrarFotoPreview(src) {
+  actualizarBtnFoto(src, 'Foto actual');
+}
+function ocultarFotoPreview() {
+  document.getElementById('foto-btn-preview').innerHTML = '👤';
+  document.getElementById('foto-btn-main').textContent = 'Elegir foto o avatar';
+  document.getElementById('foto-btn-sub').textContent = 'Cámara, galería o avatar';
+}
+
+async function subirFoto(alumnoId) {
+  if (!_fotoFile) return null;
+  const ext  = _fotoFile.name.split('.').pop();
+  const path = `${Store.escuelaId}/${alumnoId}.${ext}`;
+  const { error } = await _sb.storage.from('fotos-alumnos').upload(path, _fotoFile, { upsert: true });
+  if (error) throw error;
+  const { data } = _sb.storage.from('fotos-alumnos').getPublicUrl(path);
+  return data.publicUrl;
+}
+
+// ── CRUD ───────────────────────────────────────
+function abrirNuevo() {
+  document.getElementById('sh-titulo').textContent = 'Nuevo alumno';
+  document.getElementById('al-id').value       = '';
+  document.getElementById('al-nombre').value   = '';
+  document.getElementById('al-telefono').value = '';
+  document.getElementById('al-email').value    = '';
+  document.getElementById('al-fnac').value     = '';
+  document.getElementById('al-foto-url').value = '';
+  document.getElementById('al-foto-actual').value = '';
+  document.getElementById('al-grupo').value    = '';
+  _fotoFile = null;
+  ocultarFotoPreview();
+  fillNivelSelect = (v) => renderNivelCsel(v);  // alias para compatibilidad
+  renderNivelCsel('Principiante');
+  openSheet('sh-alumno');
+}
+
+function abrirEditarId(id) {
+  const a = _alumnos.find(x => x.id === id);
+  if (a) abrirEditar(a);
+}
+
+function abrirEditar(a) {
+  document.getElementById('sh-titulo').textContent    = 'Editar alumno';
+  document.getElementById('al-id').value              = a.id;
+  document.getElementById('al-nombre').value          = a.nombre;
+  document.getElementById('al-telefono').value        = a.telefono || '';
+  document.getElementById('al-email').value           = a.email    || '';
+  document.getElementById('al-fnac').value            = a.fecha_nacimiento || '';
+  document.getElementById('al-foto-url').value        = a.foto_url || '';
+  document.getElementById('al-foto-actual').value     = a.foto_url || '';
+  document.getElementById('al-grupo').value           = a.grupo_id || '';
+  _fotoFile = null;
+  if (a.foto_url) mostrarFotoPreview(a.foto_url);
+  else ocultarFotoPreview();
+  renderNivelCsel(a.nivel || 'Principiante');
+  openSheet('sh-alumno');
+}
+
+async function guardar() {
+  const nombre = document.getElementById('al-nombre').value.trim();
+  if (!nombre) { toast('Escribe el nombre', 'warn'); return; }
+
+  const nivel = cselGetValue('al-nivel-csel');
+  if (!nivel) { toast('Selecciona un nivel', 'warn'); return; }
+
+  const idVal          = document.getElementById('al-id').value;
+  const telefonoVal    = document.getElementById('al-telefono').value.trim();
+  const emailVal       = document.getElementById('al-email').value.trim();
+  const fnacVal        = document.getElementById('al-fnac').value;
+  const grupoVal       = document.getElementById('al-grupo').value;
+  const urlManual      = document.getElementById('al-foto-url').value.trim();
+  const fotoActual     = document.getElementById('al-foto-actual').value;
+
+  const alumno = {
+    nombre,
+    nivel,
+    telefono:         telefonoVal  || null,
+    email:            emailVal     || null,
+    fecha_nacimiento: fnacVal      || null,
+    grupo_id:         grupoVal     || null,
+    foto_url:         urlManual    || fotoActual || null,
+  };
+  if (idVal) alumno.id = idVal;
+
+  try {
+    const saved = await saveAlumno(alumno);
+
+    // Subir foto si hay archivo seleccionado
+    if (_fotoFile && saved && saved.id) {
+      try {
+        const fotoUrl = await subirFoto(saved.id);
+        if (fotoUrl) {
+          await saveAlumno({ id: saved.id, foto_url: fotoUrl });
+        }
+      } catch(fotoErr) {
+        console.warn('Error subiendo foto, alumno guardado sin foto:', fotoErr);
+      }
+    }
+
+    closeSheet('sh-alumno');
+    toast('Alumno guardado', 'ok');
+    await cargar();
+  } catch(e) {
+    console.error('Error guardar alumno:', e);
+    toast('Error: ' + (e.message || JSON.stringify(e)), 'err');
+  }
+}
+
+async function toggleBaja(id, activar) {
+  const nombre = _alumnos.find(a => a.id === id)?.nombre || '';
+  const msg = activar
+    ? `¿Dar de alta a ${nombre}?`
+    : `¿Dar de baja a ${nombre}? Su historial se conservará.`;
+  confirmar(msg, async () => {
+    try {
+      await _sb.from('alumnos').update({ activo: activar }).eq('id', id).eq('escuela_id', Store.escuelaId);
+      toast(activar ? `${nombre} dado de alta ✓` : `${nombre} dado de baja`, 'ok');
+      await cargar();
+    } catch(e) { toast('Error al cambiar estado', 'err'); console.error(e); }
+  });
+}
+
+function confirmarEliminar(id, nombre) {
+  document.getElementById('confirm-texto').textContent = `¿Eliminar a ${nombre}? Esta acción no se puede deshacer.`;
+  document.getElementById('confirm-overlay').classList.add('open');
+  document.getElementById('confirm-ok').onclick = async () => {
+    document.getElementById('confirm-overlay').classList.remove('open');
+    try { await deleteAlumno(id); toast('Alumno eliminado', 'ok'); await cargar(); }
+    catch(e) { toast('Error al eliminar', 'err'); }
+  };
+}
+
+// ── Carga ──────────────────────────────────────
+async function cargar() {
+  showLoading('lista-alumnos');
+  _alumnos = await getAlumnos();
+  filtrar();
+}
+
+async function cargarGrupos() {
+  _grupos = await getGrupos();
+  const sel = document.getElementById('al-grupo');
+  sel.innerHTML = '<option value="">Sin grupo</option>' +
+    _grupos.map(g => `<option value="${g.id}">${g.nombre}</option>`).join('');
+  // Rellenar filtro grupo
+  const fsel = document.getElementById('filtro-grupo');
+  if (fsel) {
+    fsel.innerHTML = '<option value="">Todos</option>' +
+      '<option value="__sin_grupo__">Sin grupo</option>' +
+      _grupos.map(g => `<option value="${g.id}">${g.nombre}</option>`).join('');
+  }
+}
+
+// ── Init ───────────────────────────────────────
+// ── Historial ─────────────────────────────────
+// Sobreescribe toggleCard de ui.js para cargar historial lazy
+function toggleCard(id) {
+  const exp   = document.getElementById('exp-'  + id);
+  const chev  = document.getElementById('chev-' + id);
+  const card  = document.getElementById('card-' + id);
+  if (!exp) return;
+  const abierta = exp.classList.toggle('open');
+  if (chev) chev.classList.toggle('open', abierta);
+  if (card) card.classList.toggle('card-open', abierta);
+  if (abierta) cargarHistorial(id);
+}
+
+async function cargarHistorial(alumnoId) {
+  const el = document.getElementById('hist-' + alumnoId);
+  if (!el || el.dataset.cargado) return;
+  el.dataset.cargado = '1';
+  el.innerHTML = '<div style="font-size:11px;color:#94a3b8;padding:6px 0">Cargando historial…</div>';
+
+  try {
+    const anioActual = new Date().getFullYear();
+    const [cobros, clases] = await Promise.all([
+      getCobrosAlumno(alumnoId),
+      // Buscar asistencias del alumno
+      _sb.from('clase_asistencia')
+        .select('asistio, clases(fecha, hora, grupos(nombre))')
+        .eq('alumno_id', alumnoId)
+        .order('clase_id', { ascending: false })
+        .limit(5)
+        .then(r => r.data || [])
+    ]);
+
+    const MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+    function fmtFecha(iso) {
+      if (!iso) return '—';
+      const d = new Date(iso + 'T00:00:00');
+      return `${d.getDate()} ${MESES[d.getMonth()]} ${d.getFullYear()}`;
+    }
+
+    // Últimos 5 cobros
+    const cobrosHtml = cobros.slice(0,5).map(c => {
+      const color = c.importe > 0 ? '#16a34a' : '#e05a5a';
+      return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f1f5f9">
+        <div style="flex:1">
+          <div style="font-size:11px;font-weight:800;color:#1e293b">${c.tipo||'Cobro'} ${c.mes ? '· '+c.mes : ''}</div>
+          <div style="font-size:10px;color:#94a3b8;font-weight:600">${fmtFecha(c.fecha)}</div>
+        </div>
+        <div style="font-size:12px;font-weight:900;color:${color}">${c.importe > 0 ? '+' : ''}${c.importe?.toFixed(2)}€</div>
+      </div>`;
+    }).join('') || '<div style="font-size:11px;color:#94a3b8;padding:4px 0">Sin cobros registrados</div>';
+
+    // Últimas 5 asistencias
+    const asistHtml = clases.slice(0,5).map(r => {
+      const clase = r.clases;
+      if (!clase) return '';
+      const ico   = r.asistio ? '✅' : '❌';
+      const grupo = clase.grupos?.nombre || 'Clase';
+      return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f1f5f9">
+        <div style="font-size:14px">${ico}</div>
+        <div style="flex:1">
+          <div style="font-size:11px;font-weight:800;color:#1e293b">${grupo}</div>
+          <div style="font-size:10px;color:#94a3b8;font-weight:600">${fmtFecha(clase.fecha)}${clase.hora ? ' · '+clase.hora.slice(0,5) : ''}</div>
+        </div>
+      </div>`;
+    }).join('') || '<div style="font-size:11px;color:#94a3b8;padding:4px 0">Sin asistencias registradas</div>';
+
+    el.innerHTML = `
+      <div style="margin-bottom:10px">
+        <div style="font-size:10px;font-weight:900;color:#2563eb;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;display:flex;align-items:center;gap:6px">
+          <span>💰 Últimos cobros</span>
+        </div>
+        <div style="background:#f8fafc;border-radius:10px;padding:4px 10px">${cobrosHtml}</div>
+      </div>
+      <div style="margin-bottom:8px">
+        <div style="font-size:10px;font-weight:900;color:#2563eb;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">
+          📋 Últimas clases
+        </div>
+        <div style="background:#f8fafc;border-radius:10px;padding:4px 10px">${asistHtml}</div>
+      </div>`;
+  } catch(e) {
+    el.innerHTML = '<div style="font-size:11px;color:#e05a5a;padding:4px 0">Error al cargar historial</div>';
+    console.error(e);
+  }
+}
+
+async function init() {
+  renderNav('alumnos');
+  await initStore();
+  renderHeader({ titulo:'Escuela de Pádel', subtitulo:'Alumnos', icono:'icons/alumnos.png', botonDerecho:'menu' });
+
+  // Cargar niveles desde Supabase (compartidos con grupos)
+  const cfg = await getConfigMultiple(['niveles']);
+  if (cfg.niveles && cfg.niveles.length) _cfgNiveles = cfg.niveles;
+  chipRegistrarLista('niveles', _cfgNiveles);
+  actualizarFiltrosNivel();
+
+  await cargarGrupos();
+  await cargar();
+
+  // ── Inicializar selects custom ──
+  nselInit('filtro-nivel');
+  nselInit('filtro-grupo');
+  nselInit('filtro-estado');
+  nselInit('al-grupo');
+}
+
+function abrirInfo() {
+  openSheet('sh-info-pagina');
+}
+
+init();
+</script>
+
+  <!-- Sheet: Selector de foto/avatar -->
+  <div class="overlay" id="sh-foto-avatar">
+    <div class="sheet" style="max-height:88vh;display:flex;flex-direction:column">
+      <div class="sheet-handle"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px;flex-shrink:0">
+        <div class="sheet-title">Foto del alumno</div>
+        <button onclick="closeSheet('sh-foto-avatar')" style="width:28px;height:28px;border-radius:8px;background:#f1f5f9;border:none;cursor:pointer;font-size:14px;color:#64748b;font-weight:900;font-family:Nunito,sans-serif">✕</button>
+      </div>
+      <div style="overflow-y:auto;flex:1;padding:0 16px">
+        <!-- Cámara / Galería -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px">
+          <button onclick="elegirCamara()" style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:14px;padding:16px 12px;display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;font-family:Nunito,sans-serif">
+            <img src="icons/camara.png" style="width:44px;height:44px;object-fit:contain">
+            <span style="font-size:13px;font-weight:800;color:#475569">Cámara</span>
+          </button>
+          <button onclick="elegirGaleria()" style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:14px;padding:16px 12px;display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;font-family:Nunito,sans-serif">
+            <img src="icons/galeria.png" style="width:44px;height:44px;object-fit:contain">
+            <span style="font-size:13px;font-weight:800;color:#475569">Galería</span>
+          </button>
+        </div>
+        <!-- Avatares -->
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+          <div style="flex:1;height:1px;background:#e2e8f0"></div>
+          <span style="font-size:10px;font-weight:900;color:#94a3b8;text-transform:uppercase;letter-spacing:.6px">O elige un avatar</span>
+          <div style="flex:1;height:1px;background:#e2e8f0"></div>
+        </div>
+        <!-- Filtro H/M -->
+        <div style="display:flex;gap:8px;margin-bottom:14px">
+          <button id="btn-filtro-h" onclick="filtrarAvatares('h')"
+            style="flex:1;padding:9px;border-radius:10px;border:2px solid #2563eb;background:#2563eb;color:#fff;font-family:Nunito,sans-serif;font-size:13px;font-weight:900;cursor:pointer">
+            👨 Hombres
+          </button>
+          <button id="btn-filtro-m" onclick="filtrarAvatares('m')"
+            style="flex:1;padding:9px;border-radius:10px;border:2px solid #e2e8f0;background:#f8fafc;color:#64748b;font-family:Nunito,sans-serif;font-size:13px;font-weight:900;cursor:pointer">
+            👩 Mujeres
+          </button>
+        </div>
+        <div id="avatares-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding-bottom:12px"></div>
+      </div>
+      <div style="padding:12px 16px 0;flex-shrink:0">
+        <button onclick="confirmarFoto()" style="width:100%;padding:13px;background:#2563eb;color:#fff;border:none;border-radius:14px;font-family:Nunito,sans-serif;font-size:14px;font-weight:900;cursor:pointer;box-shadow:0 4px 14px rgba(37,99,235,.3)">Confirmar</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

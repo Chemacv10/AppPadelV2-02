@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>Cobros — Escuela de Pádel</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .kpi-row{display:flex;gap:7px;padding:10px 11px 0}
+    .kpi{flex:1;background:var(--card);border:1.5px solid var(--borde);border-radius:12px;padding:9px 8px;text-align:center}
+    .kpi .val{font-size:17px;font-weight:900;line-height:1}
+    .kpi .lbl{font-size:8px;font-weight:800;text-transform:uppercase;color:var(--sutil);margin-top:2px}
+    .kpi.verde{border-color:#86efac}.kpi.verde .val{color:var(--verde)}
+    .kpi.azul{border-color:#93c5fd}.kpi.azul .val{color:var(--azul)}
+
+    .modo-tabs{display:flex;border-bottom:2px solid var(--borde);margin:10px 11px 0}
+    .mtab{flex:1;padding:9px 6px;font-size:12px;font-weight:800;color:var(--sutil);text-align:center;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s}
+    .mtab.active{color:var(--azul);border-bottom-color:var(--azul)}
+
+    .mes-sec{padding:8px 11px 4px}
+    .mes-sec-lbl{font-size:10px;font-weight:900;color:var(--sutil);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+    .mes-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:5px}
+    .mes-btn{aspect-ratio:1;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:8px;font-weight:800;text-transform:uppercase;cursor:pointer;border:2px solid transparent;gap:1px;transition:all .15s}
+    .mes-btn.pagado{background:var(--verde);color:#fff}
+    .mes-btn.vacio{background:#f1f5f9;color:#94a3b8}
+    .mes-btn.seleccionado{transform:scale(1.08);box-shadow:0 3px 10px rgba(0,0,0,.15)}
+    .mes-btn .importe{font-size:7px;opacity:.85}
+
+    .btn-generar-mes{width:100%;padding:12px;border-radius:12px;border:1.5px solid #bfdbfe;background:#eff6ff;font-size:13px;font-weight:800;cursor:pointer;font-family:Nunito,sans-serif;color:var(--azul);display:flex;align-items:center;justify-content:center;gap:8px}
+    .btn-generar-mes:active{background:#dbeafe}
+
+    .preview-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--borde)}
+    .preview-row:last-child{border-bottom:none}
+
+    .filtros-barra{display:flex;gap:6px;padding:8px 11px 4px;overflow-x:auto;scrollbar-width:none}
+    .filtros-barra::-webkit-scrollbar{display:none}
+    .fbtn{padding:6px 12px;border-radius:18px;border:1.5px solid var(--borde);background:var(--card);font-size:11px;font-weight:800;cursor:pointer;font-family:Nunito,sans-serif;color:var(--sutil);white-space:nowrap;flex-shrink:0}
+    .fbtn.active{background:var(--azul);border-color:var(--azul);color:#fff}
+
+    .anio-nav{display:flex;align-items:center;justify-content:center;padding:6px 0}
+    .anio-wrap{position:relative;display:inline-block;min-width:110px}
+    .anio-trigger{display:flex;align-items:center;justify-content:center;gap:7px;background:#f1f5f9;border:1.5px solid var(--borde);border-radius:10px;padding:7px 14px;font-size:14px;font-weight:900;color:var(--texto);cursor:pointer;-webkit-tap-highlight-color:transparent;font-family:Nunito,sans-serif}
+    .anio-trigger.open{border-color:var(--azul)}
+    .anio-arrow{font-size:12px;color:var(--azul);font-weight:900}
+    .anio-drop{position:absolute;top:calc(100% + 4px);left:0;min-width:100%;width:max-content;z-index:300;background:var(--card);border:2px solid var(--azul);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.13);overflow:hidden;display:none}
+    .anio-drop.open{display:block}
+    .anio-opt{padding:10px 0;font-size:14px;font-weight:800;color:var(--texto);text-align:center;cursor:pointer}
+    .anio-opt.sel{color:var(--azul);background:#eff6ff}
+
+    .tipos-row{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;margin-bottom:10px}
+    .tipos-row::-webkit-scrollbar{display:none}
+    .tipo-btn{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 10px;border-radius:10px;border:1.5px solid var(--borde);background:var(--card);cursor:pointer;font-size:10px;font-weight:800;color:var(--sub);font-family:Nunito,sans-serif;flex-shrink:0;min-width:60px;transition:all .15s}
+    .tipo-btn img{width:24px;height:24px;object-fit:contain}
+    .tipo-btn.activo{border-color:var(--azul);background:#eff6ff;color:var(--azul)}
+
+    .cobro-av{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .cobro-av img{width:22px;height:22px;object-fit:contain}
+    .nuevo-inline{display:flex;gap:6px;align-items:center;animation:fadeIn .15s ease}
+    .nuevo-inline .finp{flex:1}
+    .nuevo-inline .sbtn{padding:9px 12px;min-width:0;flex-shrink:0}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+  </style>
+</head>
+<body>
+<div class="page">
+  <div id="header-container"></div>
+  <nav id="nav-container"></nav>
+
+  <main class="content" style="padding-bottom:90px">
+    <div class="sec">
+      <img src="icons/mensual.png">
+      <div class="sec-title">Cobros</div>
+      <div class="sec-count" id="contador">—</div>
+    </div>
+
+    <button class="btn-anadir" onclick="abrirNuevoCobro()" style="margin:0 11px 10px">
+      <div class="btn-anadir-plus">+</div>
+      Añadir cobro
+    </button>
+
+    <div class="kpi-row" id="kpi-row"></div>
+
+    <div class="anio-nav">
+      <div class="anio-wrap" id="anio-wrap">
+        <div class="anio-trigger" id="anio-trigger" onclick="anioToggle()">
+          <span id="anio-lbl">—</span>
+          <span class="anio-arrow">∨</span>
+        </div>
+        <div class="anio-drop" id="anio-drop"></div>
+      </div>
+    </div>
+
+    <div class="modo-tabs">
+      <div class="mtab active" id="tab-resumen" onclick="setTab('resumen')">📊 Resumen</div>
+      <div class="mtab" id="tab-lista" onclick="setTab('lista')">📋 Historial</div>
+    </div>
+
+    <!-- VISTA RESUMEN -->
+    <div id="vista-resumen">
+      <div class="mes-sec">
+        <div class="mes-sec-lbl">Meses del año</div>
+        <div class="mes-grid" id="mes-grid"></div>
+      </div>
+      <div id="detalle-mes" style="padding:0 11px 4px"></div>
+      <div style="padding:4px 11px 0">
+        <button class="btn-generar-mes" onclick="abrirGenerar()">⚡ Generar cobros del mes</button>
+      </div>
+    </div>
+
+    <!-- VISTA HISTORIAL -->
+    <div id="vista-lista" style="display:none">
+      <div style="padding:0 11px 8px">
+        <div style="font-size:10px;font-weight:900;color:#2563eb;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Tipo de cobro</div>
+        <select id="filtro-tipo-sel" style="display:none" onchange="setFiltroTipo(this.value)">
+          <option value="">Todos</option>
+          <option value="Mensual">Mensual</option>
+          <option value="Particular">Particular</option>
+          <option value="Matrícula">Matrícula</option>
+          <option value="Bono">Bono</option>
+          <option value="Libre">Libre</option>
+        </select>
+        <div class="nsel-wrap" id="filtro-tipo-sel-nsel"></div>
+      </div>
+      <div id="buscador-cobros-wrap" style="padding:0 11px 6px">
+        <input class="finp" id="buscador-cobros" type="text" placeholder="Buscar alumno…" oninput="filtrarLista()" style="margin-bottom:0">
+      </div>
+      <div id="lista-cobros" style="padding:0 11px"></div>
+    </div>
+  </main>
+
+  <!-- Sheet: Nuevo / Editar cobro -->
+  <div class="overlay" id="sh-cobro">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title" id="sh-cobro-titulo">Nuevo cobro</div>
+      <div class="fgrp">
+        <div class="flbl">Alumno</div>
+        <div class="fsel-wrap"><select class="fsel" id="co-alumno"><option value="">— Selecciona alumno —</option></select></div>
+      </div>
+      <div class="fgrp" style="margin-top:6px">
+        <div class="flbl">Tipo</div>
+        <div class="fsel-wrap"><select class="fsel" id="co-tipo" onchange="onCambioTipo()">
+          <option value="Mensual">Mensual</option>
+          <option value="Particular">Particular</option>
+          <option value="Matrícula">Matrícula</option>
+          <option value="Bono">Bono</option>
+          <option value="Libre">Libre</option>
+        </select></div>
+      </div>
+      <div class="frow">
+        <div class="fgrp">
+          <div class="flbl">Importe (€)</div>
+          <input class="finp" id="co-importe" type="number" placeholder="0.00" step="0.01">
+        </div>
+        <div class="fgrp">
+          <div class="flbl">Fecha</div>
+          <input class="finp" id="co-fecha" type="date">
+        </div>
+      </div>
+      <div class="frow">
+        <div class="fgrp">
+          <div class="flbl">Mes</div>
+          <div class="fsel-wrap"><select class="fsel" id="co-mes">
+            <option value="">Sin asignar</option>
+            <option>Enero</option><option>Febrero</option><option>Marzo</option>
+            <option>Abril</option><option>Mayo</option><option>Junio</option>
+            <option>Julio</option><option>Agosto</option><option>Septiembre</option>
+            <option>Octubre</option><option>Noviembre</option><option>Diciembre</option>
+          </select></div>
+        </div>
+        <div class="fgrp">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div class="flbl">Forma de pago</div>
+            <button type="button" onclick="abrirGestionFormas()" style="background:none;border:none;font-size:10px;font-weight:800;color:#2563eb;cursor:pointer;padding:0">✕ Gestionar</button>
+          </div>
+          <div class="fsel-wrap"><select class="fsel" id="co-forma" onchange="onSelectNuevaForma(this)"></select></div>
+        </div>
+        <div class="nuevo-inline" id="nuevo-forma-wrap" style="display:none;margin-bottom:8px">
+          <input class="finp" id="nuevo-forma-inp" placeholder="Ej: Cheque"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();confirmarNuevaForma();}">
+          <button class="sbtn prim" type="button" onclick="confirmarNuevaForma()">✓</button>
+          <button class="sbtn" type="button" onclick="cancelarNuevaForma()">✕</button>
+        </div>
+      </div>
+      <div class="sheet-btns">
+        <button class="sbtn" onclick="closeSheet('sh-cobro')">Cancelar</button>
+        <button class="sbtn prim" onclick="guardarCobro()">✓ Registrar cobro</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sheet: Generar cobros del mes -->
+  <div class="overlay" id="sh-generar">
+    <div class="sheet" style="max-height:92vh">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">⚡ Generar cobros del mes</div>
+      <div class="frow">
+        <div class="fgrp">
+          <div class="flbl">Mes</div>
+          <div class="fsel-wrap"><select class="fsel" id="gen-mes">
+            <option>Enero</option><option>Febrero</option><option>Marzo</option>
+            <option>Abril</option><option>Mayo</option><option>Junio</option>
+            <option>Julio</option><option>Agosto</option><option>Septiembre</option>
+            <option>Octubre</option><option>Noviembre</option><option>Diciembre</option>
+          </select></div>
+        </div>
+        <div class="fgrp">
+          <div class="flbl">Año</div>
+          <div class="fsel-wrap"><select class="fsel" id="gen-anio"></select></div>
+        </div>
+      </div>
+      <div id="gen-preview-btn">
+        <button class="sbtn prim" style="width:100%" onclick="calcularPreview()">🔍 Calcular preview</button>
+      </div>
+      <div id="gen-resultado" style="display:none">
+        <div id="gen-preview-box" style="background:var(--card);border:1.5px solid var(--borde);border-radius:12px;padding:12px 14px;margin-bottom:8px;max-height:45vh;overflow-y:auto"></div>
+        <div class="sheet-btns" style="padding-top:0">
+          <button class="sbtn" onclick="closeSheet('sh-generar')">Cancelar</button>
+          <button class="sbtn prim" id="btn-confirmar-gen" onclick="confirmarGeneracion()">✓ Generar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="confirm-overlay" id="confirm-overlay">
+    <div class="confirm-box">
+      <div class="confirm-titulo">¿Eliminar cobro?</div>
+      <div class="confirm-texto">Esta acción no se puede deshacer.</div>
+      <div class="confirm-btns">
+        <button class="cbtn" onclick="document.getElementById('confirm-overlay').classList.remove('open')">Cancelar</button>
+        <button class="cbtn danger" id="confirm-ok">Eliminar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/store.js"></script>
+<script src="js/ui.js"></script>
+<script>
+const _params     = new URLSearchParams(location.search);
+const _alumnoFiltId = _params.get('alumno_id') || null;
+
+let _cobros     = [];
+let _alumnos    = [];
+let _anio       = new Date().getFullYear();
+let _tabActual  = 'resumen';
+let _mesSelec   = null;
+let _tipoSelec  = 'Mensual';
+let _editCobroId= null;
+let _filtroTipo = '';
+let _previewData= null;
+let _cfgFormas  = ['Efectivo','Bizum','Transferencia','Tarjeta','Domiciliación'];
+
+const MESES       = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+                     'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const MESES_CORTO = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
+const ICONO_TIPO  = { Mensual:'icons/mensual.png', Particular:'icons/particular.png',
+                      'Matrícula':'icons/matricula.png', Bono:'icons/bono.png', Libre:'icons/libre.png' };
+const TIPO_COLOR  = { Mensual:'#2563eb', Particular:'#7c3aed',
+                      'Matrícula':'#f59e0b', Bono:'#16a34a', Libre:'#64748b' };
+
+// ── Tabs ──────────────────────────────────────
+function setTab(tab) {
+  _tabActual = tab;
+  document.getElementById('vista-resumen').style.display = tab==='resumen'?'block':'none';
+  document.getElementById('vista-lista').style.display   = tab==='lista'  ?'block':'none';
+  document.querySelectorAll('.mtab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  if(tab==='lista') filtrarLista();
+}
+
+// ── Año ───────────────────────────────────────
+function poblarAnioSel(){
+  const anioHoy=new Date().getFullYear();
+  const anios=[..._cobros.reduce((s,co)=>{const a=new Date(co.fecha||0).getFullYear();if(a>2000)s.add(a);return s;},new Set())].sort((a,b)=>b-a);
+  if(!anios.includes(anioHoy)) anios.unshift(anioHoy);
+  const anioAct=_anio||anioHoy;
+  _anio=anioAct;
+  const lbl=document.getElementById('anio-lbl');
+  const drop=document.getElementById('anio-drop');
+  if(lbl)lbl.textContent=anioAct;
+  if(drop)drop.innerHTML=anios.map(a=>`<div class="anio-opt${a===anioAct?' sel':''}" onclick="anioPick(${a})">${a}</div>`).join('');
+  // Sincronizar referencia interna
+  const sel=document.getElementById('anio-sel');
+  if(sel){sel.innerHTML=anios.map(a=>`<option value="${a}" ${a===anioAct?'selected':''}>${a}</option>`).join('');sel.value=anioAct;}
+}
+function anioToggle(){
+  const drop=document.getElementById('anio-drop');
+  const trig=document.getElementById('anio-trigger');
+  if(!drop)return;
+  const open=drop.classList.contains('open');
+  drop.classList.toggle('open',!open);
+  trig.classList.toggle('open',!open);
+}
+function anioPick(v){
+  const drop=document.getElementById('anio-drop');
+  const trig=document.getElementById('anio-trigger');
+  const lbl=document.getElementById('anio-lbl');
+  if(drop)drop.classList.remove('open');
+  if(trig)trig.classList.remove('open');
+  if(lbl)lbl.textContent=v;
+  if(drop)drop.querySelectorAll('.anio-opt').forEach(o=>o.classList.toggle('sel',+o.textContent===v));
+  cambiarAnio(v);
+}
+document.addEventListener('click',e=>{if(!e.target.closest('.anio-wrap')){const d=document.getElementById('anio-drop');const t=document.getElementById('anio-trigger');if(d)d.classList.remove('open');if(t)t.classList.remove('open');}});
+function cambiarAnio(v) {
+  _anio=v; _mesSelec=null;
+  renderKPIs(); renderMeses(); renderDetalleMes();
+  if(_tabActual==='lista') filtrarLista();
+}
+
+// ── KPIs ──────────────────────────────────────
+function renderKPIs() {
+  const cobrosAnio = _cobros.filter(c=>c.fecha&&new Date(c.fecha).getFullYear()===_anio);
+  const total = cobrosAnio.reduce((s,c)=>s+(+c.importe||0),0);
+  const nAlumnos = new Set(cobrosAnio.map(c=>c.alumno_id)).size;
+  const alumnosKpi = _alumnoFiltId ? '' :
+    `<div class="kpi azul"><div class="val">${nAlumnos}</div><div class="lbl">Alumnos</div></div>`;
+  document.getElementById('kpi-row').innerHTML = `
+    <div class="kpi verde"><div class="val">${total.toFixed(0)}€</div><div class="lbl">Cobrado</div></div>
+    <div class="kpi azul"><div class="val">${cobrosAnio.length}</div><div class="lbl">Cobros</div></div>
+    ${alumnosKpi}`;
+  document.getElementById('contador').textContent = cobrosAnio.length;
+}
+
+// ── Meses ─────────────────────────────────────
+function renderMeses() {
+  const now=new Date(), mesAct=now.getMonth(), anioAct=now.getFullYear();
+  const cobrosAnio=_cobros.filter(c=>c.fecha&&new Date(c.fecha).getFullYear()===_anio);
+  document.getElementById('mes-grid').innerHTML = MESES.map((mes,i)=>{
+    const cobM=cobrosAnio.filter(c=>c.mes===mes);
+    const total=cobM.reduce((s,c)=>s+(+c.importe||0),0);
+    const esFuturo=_anio>anioAct||(_anio===anioAct&&i>mesAct);
+    const cls=(!esFuturo&&cobM.length)?'pagado':'vacio';
+    const txt=cobM.length?`<div class="importe">${total.toFixed(0)}€</div>`:'';
+    const sel=_mesSelec===mes?'seleccionado':'';
+    return `<div class="mes-btn ${cls} ${sel}" onclick="seleccionarMes('${mes}','${cls}')">
+      ${MESES_CORTO[i]}${txt}</div>`;
+  }).join('');
+}
+
+function seleccionarMes(mes,cls) {
+  _mesSelec = _mesSelec===mes ? null : mes;
+  renderMeses(); renderDetalleMes();
+}
+
+function renderDetalleMes() {
+  const el=document.getElementById('detalle-mes');
+  if(!_mesSelec){el.innerHTML='';return;}
+  const cobM=_cobros.filter(c=>c.mes===_mesSelec&&c.fecha&&new Date(c.fecha).getFullYear()===_anio);
+  const total=cobM.reduce((s,c)=>s+(+c.importe||0),0);
+  el.innerHTML=`
+    <div style="background:var(--card);border:1.5px solid var(--borde);border-radius:12px;padding:11px 12px;margin-bottom:4px">
+      <div style="font-size:12px;font-weight:900;color:var(--texto);margin-bottom:8px">📅 ${_mesSelec} ${_anio} · <span style="color:var(--verde)">${total.toFixed(0)}€</span></div>
+      ${cobM.length?cobM.map(c=>`
+        <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--borde)">
+          <div class="cobro-av" style="background:${TIPO_COLOR[c.tipo]||'#f1f5f9'}22"><img src="${ICONO_TIPO[c.tipo]||'icons/libre.png'}"></div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12px;font-weight:800;color:var(--texto)">${c.alumnos?.nombre||'—'}</div>
+            <div style="font-size:10px;color:var(--sutil);font-weight:600">${c.tipo} · ${c.forma_pago||'—'}</div>
+          </div>
+          <div style="font-size:13px;font-weight:900;color:var(--verde)">${(+c.importe||0).toFixed(0)}€</div>
+          <button onclick="editarCobro('${c.id}')" style="background:none;border:none;color:var(--azul);font-size:16px;cursor:pointer;padding:0 2px">✏</button>
+          <button onclick="eliminarCobro('${c.id}')" style="background:none;border:none;color:var(--rojo);font-size:16px;cursor:pointer;padding:0">×</button>
+        </div>`).join(''):`<div style="font-size:12px;color:var(--sutil);font-weight:600">Sin cobros en ${_mesSelec}</div>`}
+    </div>`;
+}
+
+// ── Historial ─────────────────────────────────
+function renderFiltrosTipo() {
+  // Sincronizar el select nativo con el filtro actual
+  const sel = document.getElementById('filtro-tipo-sel');
+  if (sel) {
+    sel.value = _filtroTipo;
+    nselSync('filtro-tipo-sel');
+  }
+}
+function setFiltroTipo(t){_filtroTipo=t;renderFiltrosTipo();filtrarLista();}
+
+function filtrarLista() {
+  const q=(document.getElementById('buscador-cobros')?.value||'').toLowerCase().trim();
+  let lista=_cobros.filter(c=>c.fecha&&new Date(c.fecha).getFullYear()===_anio);
+  if(_filtroTipo) lista=lista.filter(c=>c.tipo===_filtroTipo);
+  if(q) lista=lista.filter(c=>(c.alumnos?.nombre||'').toLowerCase().includes(q));
+  lista.sort((a,b)=>new Date(b.fecha)-new Date(a.fecha));
+  const el=document.getElementById('lista-cobros');
+  if(!lista.length){el.innerHTML=`<div style="text-align:center;padding:30px;color:var(--sutil);font-size:13px;font-weight:600">Sin cobros</div>`;return;}
+  el.innerHTML=lista.map(c=>`
+    <div class="card" id="card-${c.id}">
+      <div class="card-main" onclick="toggleCard('${c.id}')">
+        <div class="cobro-av" style="background:${TIPO_COLOR[c.tipo]||'#f1f5f9'}22;border-radius:9px">
+          <img src="${ICONO_TIPO[c.tipo]||'icons/libre.png'}">
+        </div>
+        <div class="ci">
+          <div class="cn">${c.alumnos?.nombre||'—'}</div>
+          <div class="cm" style="font-size:11px;color:var(--sutil);font-weight:600">${c.tipo}${c.mes?' · '+c.mes:''} · ${formatFecha(c.fecha)}</div>
+        </div>
+        <div style="font-size:14px;font-weight:900;color:var(--verde);margin-right:4px">${(+c.importe||0).toFixed(0)}€</div>
+        <div class="chev" id="chev-${c.id}">▼</div>
+      </div>
+      <div class="exp" id="exp-${c.id}">
+        <div style="font-size:11px;color:var(--sutil);font-weight:600;margin-bottom:8px">${c.forma_pago||'—'}</div>
+        <div class="abtns">
+          <button class="abtn prim" onclick="editarCobro('${c.id}')">✏️ Editar</button>
+          <button class="abtn dang" onclick="eliminarCobro('${c.id}')">🗑 Eliminar</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+// ── Sheet cobro ───────────────────────────────
+function onCambioTipo() {
+  _tipoSelec = document.getElementById('co-tipo').value;
+}
+
+function abrirNuevoCobro(){
+  _editCobroId=null;
+  document.getElementById('sh-cobro-titulo').textContent='Nuevo cobro';
+  document.getElementById('co-alumno').value = _alumnoFiltId || '';
+  document.getElementById('co-alumno').disabled = !!_alumnoFiltId;
+  nselSync('co-alumno');
+  _tipoSelec='Mensual';
+  document.getElementById('co-tipo').value='Mensual';
+  document.getElementById('co-importe').value='';
+  document.getElementById('co-fecha').value=new Date().toISOString().slice(0,10);
+  document.getElementById('co-mes').value=MESES[new Date().getMonth()];
+  fillFormaSelect('Efectivo');
+  openSheet('sh-cobro');
+}
+
+function editarCobro(id){
+  const c=_cobros.find(x=>x.id===id);if(!c)return;
+  _editCobroId=id;
+  document.getElementById('sh-cobro-titulo').textContent='Editar cobro';
+  document.getElementById('co-alumno').value=c.alumno_id||'';
+  document.getElementById('co-alumno').disabled = !!_alumnoFiltId;
+  nselSync('co-alumno');
+  _tipoSelec=c.tipo||'Mensual';
+  document.getElementById('co-tipo').value=_tipoSelec;
+  document.getElementById('co-importe').value=c.importe||'';
+  document.getElementById('co-fecha').value=c.fecha||'';
+  document.getElementById('co-mes').value=c.mes||'';
+  fillFormaSelect(c.forma_pago||'Efectivo');
+  openSheet('sh-cobro');
+}
+
+async function guardarCobro(){
+  const alumnoId=document.getElementById('co-alumno').value;
+  if(!alumnoId){toast('Selecciona un alumno','warn');return;}
+  const importe=parseFloat(document.getElementById('co-importe').value);
+  if(!importe||importe<=0){toast('Introduce un importe válido','warn');return;}
+  const cobro={
+    id:_editCobroId||undefined,
+    alumno_id:alumnoId, tipo:document.getElementById('co-tipo').value||'Mensual', importe,
+    fecha:document.getElementById('co-fecha').value||new Date().toISOString().slice(0,10),
+    mes:document.getElementById('co-mes').value||null,
+    forma_pago:document.getElementById('co-forma').value,
+  };
+  try{
+    await saveCobro(cobro); _editCobroId=null;
+    closeSheet('sh-cobro'); toast('Cobro registrado ✓','ok'); await cargar();
+  }catch(e){toast('Error al guardar','err');console.error(e);}
+}
+
+async function eliminarCobro(id){
+  document.getElementById('confirm-overlay').classList.add('open');
+  document.getElementById('confirm-ok').onclick=async()=>{
+    document.getElementById('confirm-overlay').classList.remove('open');
+    try{await deleteCobro(id);toast('Cobro eliminado','ok');await cargar();}
+    catch(e){toast('Error','err');}
+  };
+}
+
+// ── Generar cobros ────────────────────────────
+function abrirGenerar(){
+  // Poblar años en gen-anio
+  const selAnio = document.getElementById('gen-anio');
+  const anioAct = new Date().getFullYear();
+  selAnio.innerHTML = '';
+  for(let y = anioAct-1; y <= anioAct+1; y++){
+    const o = document.createElement('option');
+    o.value = y; o.textContent = y;
+    if(y === _anio) o.selected = true;
+    selAnio.appendChild(o);
+  }
+  document.getElementById('gen-mes').value=MESES[new Date().getMonth()];
+  document.getElementById('gen-anio').value=_anio;
+  nselSync('gen-mes');
+  nselSync('gen-anio');
+  document.getElementById('gen-resultado').style.display='none';
+  document.getElementById('gen-preview-btn').innerHTML=`<button class="sbtn prim" style="width:100%" onclick="calcularPreview()">🔍 Calcular preview</button>`;
+  openSheet('sh-generar');
+}
+
+async function calcularPreview(){
+  const mes=document.getElementById('gen-mes').value;
+  const anio=+document.getElementById('gen-anio').value;
+  document.getElementById('gen-preview-btn').innerHTML=`<div style="text-align:center;padding:10px"><div class="spinner"></div></div>`;
+  try{
+    const grupos=await getGruposConImporte();
+    if(!grupos.length){
+      toast('Ningún grupo tiene importe mensual configurado','warn');
+      document.getElementById('gen-preview-btn').innerHTML=`<button class="sbtn prim" style="width:100%" onclick="calcularPreview()">🔍 Calcular preview</button>`;
+      return;
+    }
+    const grupoIds=grupos.map(g=>g.id);
+    const {data:alumnos}=await _sb.from('alumnos').select('id,nombre,grupo_id').in('grupo_id',grupoIds).eq('escuela_id',Store.escuelaId);
+    const yaExisten=await getCobrosExistentesSet(mes,anio);
+
+    const aGenerar=[]; const omitidos=[];
+    (alumnos||[]).forEach(a=>{
+      const g=grupos.find(x=>x.id===a.grupo_id);if(!g)return;
+      if(yaExisten.has(a.id)) omitidos.push({...a,grupo:g});
+      else aGenerar.push({alumno_id:a.id,nombre:a.nombre,grupo:g,importe:g.importe_mensual});
+    });
+    _previewData={aGenerar,mes,anio};
+
+    const totalImporte=aGenerar.reduce((s,r)=>s+r.importe,0);
+    document.getElementById('gen-preview-box').innerHTML=`
+      <div style="font-size:13px;font-weight:900;color:var(--texto);margin-bottom:8px">📋 ${mes} ${anio}</div>
+      <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:9px;padding:8px 11px;margin-bottom:8px;font-size:12px;font-weight:800;color:#15803d">
+        ✓ <strong>${aGenerar.length} cobros</strong> · <strong>${totalImporte.toFixed(2)} €</strong> total
+      </div>
+      ${aGenerar.map(r=>`
+        <div class="preview-row">
+          <div style="flex:1">
+            <div style="font-size:12px;font-weight:700;color:var(--texto)">${r.nombre}</div>
+            <div style="font-size:10px;color:var(--sutil);font-weight:600">${r.grupo.nombre}</div>
+          </div>
+          <div style="font-size:13px;font-weight:900;color:var(--verde)">${r.importe.toFixed(2)}€</div>
+        </div>`).join('')}
+      ${omitidos.length?`<div style="margin-top:8px;font-size:10px;font-weight:700;color:var(--naranja)">
+        ⏭ ${omitidos.length} ya cobrado${omitidos.length!==1?'s':''} (omitido${omitidos.length!==1?'s':''}):
+        ${omitidos.map(a=>a.nombre).join(', ')}
+      </div>`:''}`;
+    const btn=document.getElementById('btn-confirmar-gen');
+    btn.disabled=!aGenerar.length;
+    btn.textContent=aGenerar.length?`✓ Generar ${aGenerar.length} cobros`:'Sin cobros nuevos';
+    document.getElementById('gen-resultado').style.display='block';
+    document.getElementById('gen-preview-btn').innerHTML='';
+  }catch(e){
+    toast('Error al calcular','err');console.error(e);
+    document.getElementById('gen-preview-btn').innerHTML=`<button class="sbtn prim" style="width:100%" onclick="calcularPreview()">🔍 Calcular preview</button>`;
+  }
+}
+
+async function confirmarGeneracion(){
+  const {aGenerar,mes,anio}=_previewData||{};
+  if(!aGenerar?.length){toast('Nada que generar','warn');return;}
+  const btn=document.getElementById('btn-confirmar-gen');
+  btn.disabled=true; btn.textContent='Generando…';
+  try{
+    const hoy=new Date().toISOString().slice(0,10);
+    await saveCobrosLote(aGenerar.map(r=>({
+      alumno_id:r.alumno_id, tipo:'Mensual', importe:r.importe,
+      fecha:hoy, mes, forma_pago:'Efectivo',
+    })));
+    closeSheet('sh-generar');
+    toast(`✓ ${aGenerar.length} cobros generados`,'ok');
+    await cargar();
+  }catch(e){
+    toast('Error al generar','err');console.error(e);
+    btn.disabled=false; btn.textContent=`✓ Generar ${aGenerar.length} cobros`;
+  }
+}
+
+// ── Forma de pago — gestión ───────────────────
+function fillFormaSelect(valorActual) {
+  const sel = document.getElementById('co-forma');
+  if (!sel) return;
+  const cur = valorActual ?? sel.value;
+  sel.innerHTML =
+    _cfgFormas.map(f => `<option value="${f}" ${f===cur?'selected':''}>${f}</option>`).join('') +
+    `<option value="__nuevo__">+ Añadir nueva…</option>`;
+  if (cur && cur !== '__nuevo__') sel.value = cur;
+}
+
+function onSelectNuevaForma(sel) {
+  if (sel.value !== '__nuevo__') return;
+  sel.value = _cfgFormas[0] || '';
+  const wrap = document.getElementById('nuevo-forma-wrap');
+  const inp  = document.getElementById('nuevo-forma-inp');
+  wrap.style.display = 'flex'; inp.value = ''; inp.focus();
+}
+
+function confirmarNuevaForma() {
+  const inp = document.getElementById('nuevo-forma-inp');
+  const val = inp.value.trim();
+  if (!val) { inp.focus(); return; }
+  if (!_cfgFormas.includes(val)) _cfgFormas.push(val);
+  saveConfig('formas_pago', _cfgFormas).catch(console.error);
+  fillFormaSelect(val);
+  cancelarNuevaForma();
+  toast(`✓ "${val}" añadida`, 'ok');
+}
+
+function cancelarNuevaForma() {
+  document.getElementById('nuevo-forma-wrap').style.display = 'none';
+}
+
+function abrirGestionFormas() {
+  abrirGestionOpciones(
+    'formas_pago', 'Formas de pago', _cfgFormas,
+    lista => {
+      _cfgFormas = lista;
+      saveConfig('formas_pago', lista).catch(() => {});
+      fillFormaSelect();
+      toast('Actualizado', 'ok');
+    }
+  );
+}
+
+// ── Cargar ────────────────────────────────────
+async function cargar(){
+  _cobros = await getCobrosEscuela(_alumnoFiltId ? { alumno_id: _alumnoFiltId } : {});
+  poblarAnioSel(); renderKPIs(); renderMeses(); renderDetalleMes(); renderFiltrosTipo();
+  if(_tabActual==='lista') filtrarLista();
+}
+
+function poblarSelectAlumnos(){
+  const sel=document.getElementById('co-alumno');
+  sel.innerHTML='<option value="">— Selecciona alumno —</option>'+
+    [..._alumnos].sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'))
+      .map(a=>`<option value="${a.id}">${a.nombre}</option>`).join('');
+}
+
+// ── Init ──────────────────────────────────────
+async function init(){
+  await initStore();
+  const cfg = await getConfigMultiple(['formas_pago']);
+  if (cfg.formas_pago && cfg.formas_pago.length) _cfgFormas = cfg.formas_pago;
+  fillFormaSelect('Efectivo');
+  [_alumnos] = await Promise.all([getAlumnos(), cargar()]);
+  poblarSelectAlumnos();
+
+  if(_alumnoFiltId) {
+    const alumno = _alumnos.find(a => a.id === _alumnoFiltId);
+    const nombre = alumno?.nombre || 'Alumno';
+    renderHeader({
+      titulo: nombre, subtitulo: 'Cobros',
+      icono: 'icons/mensual.png', botonDerecho: 'back', onBack: 'alumnos.html',
+    });
+    // Ocultar buscador de alumno — no tiene sentido estando prefiltrado
+    const bw = document.getElementById('buscador-cobros-wrap');
+    if(bw) bw.style.display = 'none';
+    // Ocultar botón generar y selector de año (no aplica vista por alumno)
+    const btnGen = document.querySelector('.btn-generar-mes');
+    if(btnGen) btnGen.style.display = 'none';
+    const anioNav = document.querySelector('.anio-nav');
+    if(anioNav) anioNav.style.display = 'none';
+    document.getElementById('co-alumno').value = _alumnoFiltId;
+    setTab('lista');
+  } else {
+    renderHeader({titulo:'Escuela de Pádel', subtitulo:'Cobros', icono:'icons/mensual.png', botonDerecho:'menu'});
+    renderNav('cobros');
+  }
+
+  // ── Inicializar selects custom ──
+  nselInit('co-alumno');
+  nselInit('co-tipo');
+  nselInit('filtro-tipo-sel');
+  nselInit('co-mes');
+  nselInit('co-forma');
+  nselInit('gen-mes');
+  nselInit('gen-anio');
+}
+init();
+</script>
+</body>
+</html>

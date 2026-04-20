@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>Ejercicios — Escuela de Pádel</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .nuevo-inline{display:flex;gap:6px;align-items:center;margin:-4px 0 8px;animation:fadeIn .15s ease}
+    .nuevo-inline .finp{flex:1}
+    .nuevo-inline .sbtn{padding:9px 12px;min-width:0;flex-shrink:0}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+    .filtros-wrap{display:flex;gap:8px;margin-bottom:10px}
+    .filtros-wrap > div{flex:1}
+  </style>
+</head>
+<body>
+<div class="page">
+  <div id="header-container"></div>
+  <nav id="nav-container"></nav>
+
+  <main class="content">
+    <div class="sec">
+      <img src="icons/ejercicios.png">
+      <div class="sec-title">Ejercicios <button onclick="abrirInfo()" style="background:none;border:none;color:#2563eb;font-size:13px;font-weight:800;cursor:pointer;padding:0;font-family:Nunito,sans-serif">Info.</button></div>
+      
+<div class="sec-count" id="contador">—</div>
+    </div>
+
+    <button class="btn-anadir" onclick="abrirNuevo()">
+      <div class="btn-anadir-plus">+</div>
+      Añadir ejercicio
+    </button>
+
+    <div class="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input id="buscador" placeholder="Buscar ejercicio..." oninput="filtrar()">
+    </div>
+
+    <div class="filtros-wrap">
+      <div>
+        <div class="filter-label">Categoría</div>
+        <div class="fsel-wrap"><select class="fsel" id="filtro-cat" onchange="filtrar()">
+          <option value="">Todas</option>
+          <option>Calentamiento</option>
+          <option>Carritos</option>
+          <option>Situaciones</option>
+          <option>Partiditos</option>
+          <option>Genérico</option>
+        </select></div>
+      </div>
+      <div>
+        <div class="filter-label">Nivel</div>
+        <div class="fsel-wrap"><select class="fsel" id="filtro-niv" onchange="filtrar()">
+          <option value="">Todos</option>
+        </select></div>
+      </div>
+    </div>
+
+    <div id="lista-ejercicios"><div class="loading"><div class="spinner"></div></div></div>
+  </main>
+
+  <!-- Sheet ejercicio -->
+  <div class="overlay" id="sh-ej">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title" id="sh-titulo">Nuevo ejercicio</div>
+      <input type="hidden" id="ej-id">
+
+      <div class="fgrp">
+        <div class="flbl">Nombre</div>
+        <input class="finp" id="ej-nombre" placeholder="Nombre del ejercicio">
+      </div>
+
+      <div class="frow">
+        <div class="fgrp">
+          <div class="flbl">Categoría</div>
+          <div class="csel-wrap" id="ej-cat-csel"></div>
+        </div>
+        <div class="fgrp">
+          <div class="flbl">Tipo</div>
+          <div class="csel-wrap" id="ej-tipo-csel"></div>
+        </div>
+      </div>
+
+      <div class="frow">
+        <div class="fgrp">
+          <div class="flbl">Nivel</div>
+          <div class="csel-wrap" id="ej-nivel-csel"></div>
+        </div>
+        <div class="fgrp">
+          <div class="flbl">Duración</div>
+          <input class="finp" id="ej-dur" placeholder="Ej: 15 min" value="15 min">
+        </div>
+      </div>
+
+      <div class="fgrp">
+        <div class="flbl">Material</div>
+        <input class="finp" id="ej-mat" placeholder="Ej: Pelotas, Conos">
+      </div>
+      <div class="fgrp">
+        <div class="flbl">Descripción</div>
+        <textarea class="finp" id="ej-desc" placeholder="Describe el ejercicio..." rows="3" style="resize:none;line-height:1.5"></textarea>
+      </div>
+      <div class="fgrp">
+        <div class="flbl">Vídeo YouTube (URL)</div>
+        <input class="finp" id="ej-video" placeholder="https://youtube.com/...">
+      </div>
+
+      <div class="sheet-btns">
+        <button class="sbtn" onclick="closeSheet('sh-ej')">Cancelar</button>
+        <button class="sbtn prim" onclick="guardar()">✓ Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="confirm-overlay" id="confirm-overlay">
+    <div class="confirm-box">
+      <div class="confirm-titulo">¿Eliminar ejercicio?</div>
+      <div class="confirm-texto" id="confirm-texto"></div>
+      <div class="confirm-btns">
+        <button class="cbtn" onclick="document.getElementById('confirm-overlay').classList.remove('open')">Cancelar</button>
+        <button class="cbtn danger" id="confirm-ok">Eliminar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+  <!-- Sheet info página -->
+  <div class="overlay" id="sh-info-pagina">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">Ejercicios</div>
+      <div style="font-size:14px;font-weight:600;color:var(--sub);line-height:1.65;padding-bottom:8px">Biblioteca de ejercicios para usar en tus clases. Puedes organizarlos por categoría, tipo y nivel, añadir descripción, material y vídeo. Los que no uses los puedes desactivar sin perderlos.</div>
+      <div class="sheet-btns">
+        <button class="sbtn prim" style="flex:1" onclick="closeSheet('sh-info-pagina')">Entendido</button>
+      </div>
+    </div>
+  </div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/store.js"></script>
+<script src="js/ui.js"></script>
+<script>
+let _ejercicios  = [];
+let _cfgNiveles  = ['Principiante','Intermedio','Avanzado'];
+let _cfgTipos    = ['Ataque','Defensa','Volea','Saque','Resto','Remate','Globo','Táctica','Físico','Técnica básica'];
+let _cfgCategorias = ['Calentamiento','Carritos','Situaciones','Partiditos','Genérico'];
+
+const ICONO_CAT = {
+  'Calentamiento':'icons/calentamiento.png',
+  'Carritos':     'icons/carritos.png',
+  'Situaciones':  'icons/situaciones.png',
+  'Partiditos':   'icons/partiditos.png',
+  'Genérico':     'icons/generico.png',
+};
+
+// ── Filtros ────────────────────────────────────
+function filtrar() {
+  const q   = (document.getElementById('buscador').value || '').toLowerCase().trim();
+  const cat = document.getElementById('filtro-cat').value;
+  const niv = document.getElementById('filtro-niv').value;
+  const lista = _ejercicios.filter(e => {
+    if (cat && e.categoria !== cat) return false;
+    if (niv && e.nivel !== niv && e.nivel) return false;
+    if (!q) return true;
+    return [e.nombre, e.categoria, e.tipo, e.nivel, e.descripcion].filter(Boolean).join(' ').toLowerCase().includes(q);
+  });
+  renderLista(lista);
+}
+
+// ── Render ─────────────────────────────────────
+function renderLista(lista) {
+  document.getElementById('contador').textContent = lista.filter(e=>e.activo!==false).length;
+  const el = document.getElementById('lista-ejercicios');
+  if (!lista.length) { showEmpty('lista-ejercicios','Sin ejercicios con ese filtro'); return; }
+  el.innerHTML = lista.map(e => {
+    const inactivo = e.activo === false;
+    const tags = [
+      e.categoria ? `<span class="etag">${e.categoria}</span>` : '',
+      e.tipo      ? `<span class="etag">${e.tipo}</span>`      : '',
+      e.duracion  ? `<span class="etag">${e.duracion}</span>`  : '',
+      e.material  ? `<span class="etag">${e.material}</span>`  : '',
+    ].join('');
+    return `
+    <div class="card" id="card-${e.id}" style="${inactivo?'opacity:.45;':''}border-left-color:${chipColor(e.categoria||'').tx}">
+      <div class="card-main" onclick="toggleCard('${e.id}')">
+        <div class="av-ico"><img src="${ICONO_CAT[e.categoria]||'icons/ejercicios.png'}"></div>
+        <div class="ci">
+          <div class="cn">${e.nombre}${inactivo?' <span style="font-size:10px;font-weight:800;color:var(--rojo)">🚫 inactivo</span>':''}</div>
+          <div class="cm">
+            <span class="chip" style="background:${chipColor(e.categoria||'').bg};color:${chipColor(e.categoria||'').tx}">${e.categoria||'Sin categoría'}</span>
+            ${e.nivel ? chipNivel(e.nivel) : ''}
+            ${e.duracion ? `<span style="font-size:10px;color:var(--sutil);font-weight:600">· ${e.duracion}</span>` : ''}
+          </div>
+        </div>
+        <div class="chev" id="chev-${e.id}">▼</div>
+      </div>
+      <div class="exp" id="exp-${e.id}">
+        <div class="etags">${tags}</div>
+        ${e.descripcion ? `<div class="edesc">${e.descripcion}</div>` : ''}
+        <div class="euso">${e.usos ? e.usos+' usos' : 'Nunca usado'}</div>
+        ${e.video_url ? `<a href="${e.video_url}" target="_blank" class="abtn" style="font-size:11px;color:#e05a5a;text-decoration:none;display:inline-flex;align-items:center;gap:4px;margin-top:2px">▶ Ver vídeo en YouTube</a>` : ''}
+        <div class="abtns">
+          <button class="abtn prim" onclick="abrirEditarId('${e.id}')">✏️ Editar</button>
+          <button class="abtn dang" onclick="confirmarEliminar('${e.id}','${e.nombre.replace(/'/g,"\'")}')">🗑 Eliminar</button>
+          ${inactivo
+            ? `<button class="abtn" style="border-color:var(--verde);color:var(--verde)" onclick="reactivar('${e.id}')">✓ Reactivar</button>`
+            : `<button class="abtn warn" onclick="noUsar('${e.id}')">🚫 No usar</button>`
+          }
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Selectores custom ejercicios ───────────────
+const CATS_EJ = ['Calentamiento','Carritos','Situaciones','Partiditos','Genérico'];
+
+function renderEjCatCsel(val) {
+  cselRender('ej-cat-csel', _cfgCategorias, val || _cfgCategorias[0],
+    null, null,
+    (v, lista) => { _cfgCategorias = lista; saveConfig('categorias', _cfgCategorias).catch(console.error); actualizarFiltrosCat(); },
+    (v, lista) => { _cfgCategorias = lista; saveConfig('categorias', _cfgCategorias).catch(console.error); actualizarFiltrosCat(); },
+    '+ Añadir categoría…');
+}
+
+function renderEjTipoCsel(val) {
+  cselRender('ej-tipo-csel', ['— Sin tipo —', ..._cfgTipos], val || '— Sin tipo —',
+    '— Sin tipo —', null,
+    (v, lista) => { _cfgTipos = lista.filter(x=>x!=='— Sin tipo —'); saveConfig('tipos', _cfgTipos).catch(console.error); },
+    (v, lista) => { _cfgTipos = lista.filter(x=>x!=='— Sin tipo —'); saveConfig('tipos', _cfgTipos).catch(console.error); },
+    '+ Añadir tipo…');
+}
+
+function renderEjNivelCsel(val) {
+  cselRender('ej-nivel-csel', ['— Todos los niveles —', ..._cfgNiveles], val || '— Todos los niveles —',
+    '— Todos los niveles —', null,
+    (v, lista) => { _cfgNiveles = lista.filter(x=>x!=='— Todos los niveles —'); saveConfig('niveles', _cfgNiveles).catch(console.error); fillFiltroNivel(); },
+    (v, lista) => { _cfgNiveles = lista.filter(x=>x!=='— Todos los niveles —'); saveConfig('niveles', _cfgNiveles).catch(console.error); fillFiltroNivel(); },
+    '+ Añadir nivel…');
+}
+
+// Alias para compatibilidad con llamadas existentes
+function fillTipoSelect(v) { renderEjTipoCsel(v); }
+function fillNivelSelect(v) { renderEjNivelCsel(v); }
+function fillFiltroNivel() {
+  const sel = document.getElementById('filtro-niv');
+  if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Todos</option>' +
+    _cfgNiveles.map(n => `<option value="${n}">${n}</option>`).join('');
+  if (cur) sel.value = cur;
+}
+
+function actualizarFiltrosCat() {
+  const sel = document.getElementById('filtro-cat');
+  if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Todas</option>' +
+    _cfgCategorias.map(c => `<option value="${c}">${c}</option>`).join('');
+  sel.value = _cfgCategorias.includes(cur) ? cur : '';
+  nselSync('filtro-cat');
+}
+
+// ── CRUD ───────────────────────────────────────
+function abrirNuevo() {
+  document.getElementById('sh-titulo').textContent = 'Nuevo ejercicio';
+  ['ej-id','ej-nombre','ej-mat','ej-desc','ej-video'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('ej-dur').value = '15 min';
+  renderEjCatCsel('Calentamiento');
+  renderEjTipoCsel('— Sin tipo —');
+  renderEjNivelCsel('— Todos los niveles —');
+  openSheet('sh-ej');
+}
+
+function abrirEditarId(id) {
+  const e = _ejercicios.find(x => x.id === id);
+  if (e) abrirEditar(e);
+}
+
+function abrirEditar(e) {
+  document.getElementById('sh-titulo').textContent = 'Editar ejercicio';
+  document.getElementById('ej-id').value      = e.id;
+  document.getElementById('ej-nombre').value  = e.nombre;
+  document.getElementById('ej-dur').value     = e.duracion  || '15 min';
+  document.getElementById('ej-mat').value     = e.material  || '';
+  document.getElementById('ej-desc').value    = e.descripcion || '';
+  document.getElementById('ej-video').value   = e.video_url  || '';
+  renderEjCatCsel(e.categoria || 'Calentamiento');
+  renderEjTipoCsel(e.tipo || '— Sin tipo —');
+  renderEjNivelCsel(e.nivel || '— Todos los niveles —');
+  openSheet('sh-ej');
+}
+
+async function guardar() {
+  const nombre = document.getElementById('ej-nombre').value.trim();
+  if (!nombre) { toast('Escribe el nombre','warn'); return; }
+  const idVal   = document.getElementById('ej-id').value || undefined;
+  const tipoVal = cselGetValue('ej-tipo-csel');
+  const nivelVal= cselGetValue('ej-nivel-csel');
+  const catVal  = cselGetValue('ej-cat-csel');
+  // Preservar activo: si es edición, mantener el valor actual; si es nuevo, true
+  const ejercActual = idVal ? _ejercicios.find(e => e.id === idVal) : null;
+  const ej = {
+    id:          idVal,
+    nombre,
+    categoria:   catVal || 'Calentamiento',
+    tipo:        tipoVal === '— Sin tipo —' ? '' : (tipoVal || ''),
+    nivel:       nivelVal === '— Todos los niveles —' ? null : (nivelVal || null),
+    duracion:    document.getElementById('ej-dur').value,
+    material:    document.getElementById('ej-mat').value.trim(),
+    descripcion: document.getElementById('ej-desc').value.trim(),
+    video_url:   document.getElementById('ej-video').value.trim() || null,
+    activo:      ejercActual ? (ejercActual.activo !== false) : true,
+  };
+  try {
+    await saveEjercicio(ej);
+    closeSheet('sh-ej');
+    toast('Ejercicio guardado','ok');
+    await cargar();
+  } catch(e) {
+    // Fallback 1: sin video_url
+    if (e.message && (e.message.includes('video_url') || e.message.includes('activo'))) {
+      try {
+        const { video_url, activo, ...ejBase } = ej;
+        await saveEjercicio(ejBase);
+        closeSheet('sh-ej');
+        toast('Ejercicio guardado','ok');
+        await cargar();
+        return;
+      } catch(e2) {
+        // Fallback 2: solo campos básicos
+        try {
+          const { video_url, activo, duracion, material, nivel, tipo, ...ejMin } = ej;
+          await saveEjercicio({ ...ejMin, duracion: ej.duracion, nivel: ej.nivel, tipo: ej.tipo });
+          closeSheet('sh-ej');
+          toast('Ejercicio guardado','ok');
+          await cargar();
+          return;
+        } catch(e3) { toast('Error al guardar: ' + (e3.message||e3), 'err'); console.error(e3); }
+      }
+    } else {
+      toast('Error al guardar: ' + (e.message||e), 'err');
+      console.error(e);
+    }
+  }
+}
+
+async function noUsar(id) {
+  try { await saveEjercicio({ id, activo: false }); toast('Desactivado','warn'); await cargar(); }
+  catch(e) { toast('Error','err'); }
+}
+
+async function reactivar(id) {
+  try { await saveEjercicio({ id, activo: true }); toast('✓ Ejercicio reactivado','ok'); await cargar(); }
+  catch(e) { toast('Error','err'); }
+}
+
+function confirmarEliminar(id, nombre) {
+  document.getElementById('confirm-texto').textContent = `¿Eliminar "${nombre}"?`;
+  document.getElementById('confirm-overlay').classList.add('open');
+  document.getElementById('confirm-ok').onclick = async () => {
+    document.getElementById('confirm-overlay').classList.remove('open');
+    try { await deleteEjercicio(id); toast('Eliminado','ok'); await cargar(); }
+    catch(e) { toast('Error','err'); }
+  };
+}
+
+async function cargar() {
+  showLoading('lista-ejercicios');
+  _ejercicios = await getEjercicios();
+  filtrar();
+}
+
+async function init() {
+  renderNav('ejercicios');
+  await initStore();
+  renderHeader({ titulo:'Escuela de Pádel', subtitulo:'Ejercicios', icono:'icons/ejercicios.png', botonDerecho:'menu' });
+
+  // Cargar config
+  const cfg = await getConfigMultiple(['niveles','tipos','categorias']);
+  if (cfg.niveles     && cfg.niveles.length)     _cfgNiveles    = cfg.niveles;
+  if (cfg.categorias  && cfg.categorias.length)  _cfgCategorias = cfg.categorias;
+  if (cfg.tipos   && cfg.tipos.length)   _cfgTipos   = cfg.tipos;
+  chipRegistrarLista('niveles', _cfgNiveles);
+  fillFiltroNivel();
+
+  await cargar();
+
+  // ── Inicializar selects custom ──
+  nselInit('filtro-cat');
+  nselInit('filtro-niv');
+
+}
+function abrirInfo() {
+  openSheet('sh-info-pagina');
+}
+
+init();
+</script>
+</body>
+</html>

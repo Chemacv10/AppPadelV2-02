@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>Monitores — Escuela de Pádel</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* ── Foto avatar ── */
+    .av-foto    { width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid var(--borde); }
+    .av-foto-lg { width:64px;height:64px;border-radius:50%;object-fit:cover;border:2px solid var(--borde);display:block;margin:0 auto 6px; }
+
+    /* ── Foto upload ── */
+    .foto-btns { display:flex;gap:8px;width:100%; }
+    .foto-btn  { flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;border:1.5px solid var(--borde);background:#f8fafc;color:var(--texto);font-family:inherit; }
+    .foto-btn:active { background:#e2e8f0; }
+
+    /* ── Chips de rol ── */
+    .chip-ayudante { background:#fffbeb;color:#b45309;border:1.5px solid #fde68a; }
+    .chip-monitor  { background:#eff6ff;color:#1d4ed8;border:1.5px solid #bfdbfe; }
+    .chip-admin    { background:#f0fdf4;color:#15803d;border:1.5px solid #86efac; }
+
+    /* ── Badge de estado ── */
+    .badge-inactivo { background:#f1f5f9;color:#94a3b8;border:1.5px solid #e2e8f0;border-radius:20px;padding:2px 9px;font-size:10px;font-weight:900; }
+    .badge-pendiente { background:#fffbeb;color:#b45309;border:1.5px solid #fde68a;border-radius:20px;padding:2px 9px;font-size:10px;font-weight:800; }
+
+    /* ── Permiso chips ── */
+    .perm-grid { display:flex;flex-direction:column;gap:6px;margin-top:4px; }
+    .perm-item {
+      display:flex;align-items:center;gap:10px;
+      background:var(--fondo);border:1.5px solid var(--borde);
+      border-radius:11px;padding:9px 12px;cursor:pointer;
+      transition:all .12s;
+    }
+    .perm-item.activo { background:#eff6ff;border-color:#bfdbfe; }
+    .perm-toggle {
+      width:20px;height:20px;border-radius:6px;
+      border:2px solid var(--borde);background:#fff;
+      display:flex;align-items:center;justify-content:center;
+      font-size:11px;flex-shrink:0;transition:all .12s;
+    }
+    .perm-item.activo .perm-toggle { background:#2563eb;border-color:#2563eb;color:#fff; }
+    .perm-nombre { font-size:12px;font-weight:800;color:var(--texto);flex:1; }
+    .perm-desc   { font-size:10px;font-weight:600;color:var(--sutil);margin-top:1px; }
+
+    /* ── Sección de invitación ── */
+    .inv-box {
+      background:#f0fdf4;border:1.5px solid #86efac;
+      border-radius:12px;padding:12px 14px;margin-top:4px;
+    }
+    .inv-box-warn {
+      background:#fffbeb;border:1.5px solid #fde68a;
+      border-radius:12px;padding:12px 14px;margin-top:4px;
+    }
+
+    /* ── Preset rol ── */
+    .preset-row { display:flex;gap:6px;margin-bottom:12px; }
+    .preset-btn {
+      flex:1;padding:8px 4px;border-radius:10px;
+      border:2px solid var(--borde);background:var(--fondo);
+      font-size:11px;font-weight:900;cursor:pointer;font-family:inherit;
+      color:var(--sutil);transition:all .12s;
+    }
+    .preset-btn.sel-ayudante { background:#fffbeb;border-color:#fde68a;color:#b45309; }
+    .preset-btn.sel-monitor  { background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8; }
+    .preset-btn.sel-admin    { background:#f0fdf4;border-color:#86efac;color:#15803d; }
+  </style>
+</head>
+<body>
+<div class="page">
+  <div id="header-container"></div>
+  <nav id="nav-container"></nav>
+
+  <main class="content">
+    <div class="sec">
+      <img src="icons/monitores.png">
+      <div class="sec-title">Monitores <button onclick="abrirInfo()" style="background:none;border:none;color:#2563eb;font-size:13px;font-weight:800;cursor:pointer;padding:0;font-family:Nunito,sans-serif">Info.</button></div>
+      <div class="sec-count" id="contador">—</div>
+    </div>
+
+    <button class="btn-anadir" onclick="abrirNuevo()">
+      <div class="btn-anadir-plus">+</div>
+      Añadir monitor
+    </button>
+
+    <!-- Buscador -->
+    <div class="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input id="buscador" placeholder="Buscar monitor…" oninput="filtrar()">
+    </div>
+
+    <!-- Filtros -->
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <div style="flex:1">
+        <div class="filter-label">Rol</div>
+        <div class="fsel-wrap"><select class="fsel" id="filtro-rol" onchange="filtrar()">
+          <option value="">Todos</option>
+          <option value="admin">Admin</option>
+          <option value="monitor">Monitor</option>
+          <option value="ayudante">Ayudante</option>
+        </select></div>
+      </div>
+      <div style="flex:1">
+        <div class="filter-label">Estado</div>
+        <div class="fsel-wrap"><select class="fsel" id="filtro-estado" onchange="filtrar()">
+          <option value="activos">Activos</option>
+          <option value="todos">Todos</option>
+          <option value="inactivos">Bajas</option>
+        </select></div>
+      </div>
+    </div>
+
+    <div id="lista-monitores"><div class="loading"><div class="spinner"></div></div></div>
+  </main>
+
+  <!-- ══════════════════════════════════════
+       SHEET: Nuevo / Editar monitor
+  ══════════════════════════════════════════ -->
+  <div class="overlay" id="sh-monitor">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title" id="sh-titulo">Nuevo monitor</div>
+      <input type="hidden" id="mo-id">
+      <input type="hidden" id="mo-foto-actual">
+
+      <!-- Nombre -->
+      <div class="fgrp">
+        <div class="flbl">Nombre completo *</div>
+        <input class="finp" id="mo-nombre" placeholder="Ej: Carlos Ruiz">
+      </div>
+
+      <!-- Email + Teléfono -->
+      <div class="frow">
+        <div class="fgrp">
+          <div class="flbl">Email</div>
+          <input class="finp" id="mo-email" placeholder="email@ejemplo.com" type="email">
+        </div>
+        <div class="fgrp">
+          <div class="flbl">Teléfono</div>
+          <input class="finp" id="mo-telefono" placeholder="6xx xxx xxx" type="tel">
+        </div>
+      </div>
+
+      <!-- Rol + Tarifa -->
+      <div class="frow">
+        <div class="fgrp" style="flex:2">
+          <div class="flbl">Rol *</div>
+          <div class="fsel-wrap"><select class="fsel" id="mo-rol" onchange="onRolChange()">
+            <option value="ayudante">🟡 Ayudante</option>
+            <option value="monitor" selected>🔵 Monitor</option>
+            <option value="admin">🟢 Admin</option>
+          </select></div>
+        </div>
+        <div class="fgrp" style="flex:1">
+          <div class="flbl">€/hora</div>
+          <input class="finp" id="mo-tarifa" placeholder="0.00" type="number" step="0.5" min="0">
+        </div>
+      </div>
+
+      <!-- Foto -->
+      <div class="fgrp">
+        <div class="flbl">Foto <span style="font-weight:600;text-transform:none;font-size:10px">(opcional)</span></div>
+        <button class="btn-anadir" onclick="abrirSelectorFoto()" id="btn-foto-selector" style="margin-bottom:0">
+          <div id="foto-btn-preview" style="width:32px;height:32px;border-radius:8px;background:#dbeafe;display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden;flex-shrink:0">👤</div>
+          <div style="flex:1;text-align:left">
+            <div id="foto-btn-main" style="font-size:13px;font-weight:800;color:#2563eb">Elegir foto o avatar</div>
+            <div id="foto-btn-sub" style="font-size:11px;font-weight:600;color:#64748b;margin-top:1px">Cámara, galería o avatar</div>
+          </div>
+          <span style="font-size:14px;color:#93c5fd">›</span>
+        </button>
+        <input type="hidden" id="mo-foto-url">
+        <input type="file" id="foto-file-input" accept="image/*" onchange="onFotoChange(event)" style="display:none">
+      </div>
+
+      <!-- ─── PERMISOS ─── -->
+      <div style="margin-top:4px">
+        <div class="flbl" style="margin-bottom:8px">Permisos de acceso</div>
+
+        <!-- Presets rápidos -->
+        <div class="preset-row" id="preset-row">
+          <button class="preset-btn" data-rol="ayudante" onclick="aplicarPreset('ayudante')">🟡 Ayudante</button>
+          <button class="preset-btn" data-rol="monitor"  onclick="aplicarPreset('monitor')">🔵 Monitor</button>
+          <button class="preset-btn" data-rol="admin"    onclick="aplicarPreset('admin')">🟢 Admin</button>
+        </div>
+
+        <div class="perm-grid" id="perm-grid"></div>
+      </div>
+
+      <div class="sheet-btns">
+        <button class="sbtn" onclick="closeSheet('sh-monitor')">Cancelar</button>
+        <button class="sbtn prim" onclick="guardar()">✓ Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       SHEET: Invitar monitor
+  ══════════════════════════════════════════ -->
+  <div class="overlay" id="sh-invitar">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">Invitar a la app</div>
+      <div id="inv-monitor-nombre" style="font-size:14px;font-weight:900;color:var(--texto);margin-bottom:14px"></div>
+
+      <div id="inv-estado-box"></div>
+
+      <div id="inv-email-box">
+        <div class="fgrp">
+          <div class="flbl">Email de acceso</div>
+          <input class="finp" id="inv-email" placeholder="email@ejemplo.com" type="email">
+        </div>
+        <div style="font-size:11px;font-weight:600;color:var(--sutil);line-height:1.5;margin-bottom:14px">
+          Se enviará un enlace mágico a este email. Al abrirlo, el monitor quedará registrado y podrá acceder a la app con los permisos asignados.
+        </div>
+        <div class="sheet-btns">
+          <button class="sbtn" onclick="closeSheet('sh-invitar')">Cancelar</button>
+          <button class="sbtn prim" id="btn-enviar-inv" onclick="enviarInvitacion()">📧 Enviar invitación</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirmación -->
+  <div class="confirm-overlay" id="confirm-overlay">
+    <div class="confirm-box">
+      <div class="confirm-titulo" id="confirm-titulo">¿Eliminar monitor?</div>
+      <div class="confirm-texto" id="confirm-texto">Esta acción no se puede deshacer.</div>
+      <div class="confirm-btns">
+        <button class="cbtn" onclick="document.getElementById('confirm-overlay').classList.remove('open')">Cancelar</button>
+        <button class="cbtn danger" id="confirm-ok">Eliminar</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- .page -->
+
+<!-- Sheet info -->
+<div class="overlay" id="sh-info-pagina">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Monitores</div>
+    <div style="font-size:14px;font-weight:600;color:var(--sub);line-height:1.65;padding-bottom:8px">
+      Gestiona el equipo de monitores de tu escuela. Puedes crear fichas, asignarles rol y permisos específicos, e invitarlos a acceder a la app mediante un enlace mágico enviado a su email.
+    </div>
+    <div style="margin-bottom:12px">
+      <div style="font-size:11px;font-weight:900;color:#2563eb;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Roles disponibles</div>
+      <div style="display:flex;flex-direction:column;gap:5px">
+        <div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:9px;padding:8px 11px;font-size:12px;font-weight:800;color:#b45309">🟡 Ayudante — Solo pasar lista</div>
+        <div style="background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:9px;padding:8px 11px;font-size:12px;font-weight:800;color:#1d4ed8">🔵 Monitor — Lista, alumnos y clases</div>
+        <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:9px;padding:8px 11px;font-size:12px;font-weight:800;color:#15803d">🟢 Admin — Acceso total</div>
+      </div>
+    </div>
+    <div class="sheet-btns">
+      <button class="sbtn prim" style="flex:1" onclick="closeSheet('sh-info-pagina')">Entendido</button>
+    </div>
+  </div>
+</div>
+
+<!-- Sheet: Selector foto/avatar -->
+<div class="overlay" id="sh-foto-avatar">
+  <div class="sheet" style="max-height:88vh;display:flex;flex-direction:column">
+    <div class="sheet-handle"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px;flex-shrink:0">
+      <div class="sheet-title">Foto del monitor</div>
+      <button onclick="closeSheet('sh-foto-avatar')" style="width:28px;height:28px;border-radius:8px;background:#f1f5f9;border:none;cursor:pointer;font-size:14px;color:#64748b;font-weight:900;font-family:Nunito,sans-serif">✕</button>
+    </div>
+    <div style="overflow-y:auto;flex:1;padding:0 16px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px">
+        <button onclick="elegirCamara()" style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:14px;padding:16px 12px;display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;font-family:Nunito,sans-serif">
+          <img src="icons/camara.png" style="width:44px;height:44px;object-fit:contain">
+          <span style="font-size:13px;font-weight:800;color:#475569">Cámara</span>
+        </button>
+        <button onclick="elegirGaleria()" style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:14px;padding:16px 12px;display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;font-family:Nunito,sans-serif">
+          <img src="icons/galeria.png" style="width:44px;height:44px;object-fit:contain">
+          <span style="font-size:13px;font-weight:800;color:#475569">Galería</span>
+        </button>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <div style="flex:1;height:1px;background:#e2e8f0"></div>
+        <span style="font-size:10px;font-weight:900;color:#94a3b8;text-transform:uppercase;letter-spacing:.6px">O elige un avatar</span>
+        <div style="flex:1;height:1px;background:#e2e8f0"></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <button id="btn-filtro-h" onclick="filtrarAvatares('h')"
+          style="flex:1;padding:9px;border-radius:10px;border:2px solid #2563eb;background:#2563eb;color:#fff;font-family:Nunito,sans-serif;font-size:13px;font-weight:900;cursor:pointer">
+          👨 Hombres
+        </button>
+        <button id="btn-filtro-m" onclick="filtrarAvatares('m')"
+          style="flex:1;padding:9px;border-radius:10px;border:2px solid #e2e8f0;background:#f8fafc;color:#64748b;font-family:Nunito,sans-serif;font-size:13px;font-weight:900;cursor:pointer">
+          👩 Mujeres
+        </button>
+      </div>
+      <div id="avatares-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding-bottom:12px"></div>
+    </div>
+    <div style="padding:12px 16px 0;flex-shrink:0">
+      <button onclick="confirmarFoto()" style="width:100%;padding:13px;background:#2563eb;color:#fff;border:none;border-radius:14px;font-family:Nunito,sans-serif;font-size:14px;font-weight:900;cursor:pointer;box-shadow:0 4px 14px rgba(37,99,235,.3)">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/store.js"></script>
+<script src="js/ui.js"></script>
+<script>
+
+// ════════════════════════════════════════════════
+//  DEFINICIÓN DE PERMISOS
+// ════════════════════════════════════════════════
+const PERMISOS_DEF = [
+  { id:'pasar_lista',       nombre:'Pasar lista',        desc:'Ver clases asignadas y marcar asistencia' },
+  { id:'ver_alumnos',       nombre:'Ver alumnos',         desc:'Consultar fichas y datos de alumnos' },
+  { id:'gestionar_clases',  nombre:'Gestionar clases',    desc:'Crear, editar y cancelar clases' },
+  { id:'gestionar_grupos',  nombre:'Gestionar grupos',    desc:'Crear y editar grupos' },
+  { id:'ver_cobros',        nombre:'Ver cobros',          desc:'Consultar historial de cobros' },
+  { id:'gestionar_cobros',  nombre:'Gestionar cobros',    desc:'Registrar y editar cobros' },
+  { id:'gestionar_torneos', nombre:'Gestionar torneos',   desc:'Crear y dirigir torneos' },
+  { id:'ver_stats',         nombre:'Ver estadísticas',    desc:'Acceder al módulo de estadísticas' },
+  { id:'admin_total',       nombre:'Administrador total', desc:'Acceso completo a todos los módulos' },
+];
+
+const PRESETS = {
+  ayudante: ['pasar_lista'],
+  monitor:  ['pasar_lista','ver_alumnos','gestionar_clases'],
+  admin:    ['pasar_lista','ver_alumnos','gestionar_clases','gestionar_grupos',
+             'ver_cobros','gestionar_cobros','gestionar_torneos','ver_stats','admin_total'],
+};
+
+// ════════════════════════════════════════════════
+//  ESTADO
+// ════════════════════════════════════════════════
+let _monitores = [];
+let _permisosActivos = new Set();
+let _fotoFile = null;
+let _avatarSeleccionado = null;
+let _filtroAvatar = 'h';
+
+const AVATARES_H = Array.from({length:16},(_,i)=>`icons/av_m${String(i+1).padStart(2,'0')}.png`);
+const AVATARES_M = Array.from({length:16},(_,i)=>`icons/av_f${String(i+1).padStart(2,'0')}.png`);
+
+// ════════════════════════════════════════════════
+//  FILTRAR / RENDER LISTA
+// ════════════════════════════════════════════════
+function filtrar() {
+  const q     = (document.getElementById('buscador').value||'').toLowerCase().trim();
+  const rol   = document.getElementById('filtro-rol')?.value   || '';
+  const estado= document.getElementById('filtro-estado')?.value|| 'activos';
+
+  const lista = _monitores
+    .filter(m => {
+      if (estado==='activos'   && m.activo===false) return false;
+      if (estado==='inactivos' && m.activo!==false) return false;
+      if (rol && m.rol !== rol) return false;
+      if (!q) return true;
+      const hay=[m.nombre,m.email,m.telefono,m.rol].filter(Boolean).join(' ').toLowerCase();
+      return q.split(/\s+/).filter(Boolean).some(p=>hay.includes(p));
+    })
+    .sort((a,b)=>{
+      if (a.activo===false && b.activo!==false) return 1;
+      if (a.activo!==false && b.activo===false) return -1;
+      return a.nombre.localeCompare(b.nombre,'es');
+    });
+
+  renderLista(lista);
+}
+
+function chipRol(rol) {
+  const map = {
+    admin:    {emoji:'🟢',label:'Admin',    cls:'chip-admin'},
+    monitor:  {emoji:'🔵',label:'Monitor',  cls:'chip-monitor'},
+    ayudante: {emoji:'🟡',label:'Ayudante', cls:'chip-ayudante'},
+  };
+  const r = map[rol]||{emoji:'',label:rol,cls:''};
+  return `<span class="chip ${r.cls}" style="border-radius:20px;font-size:10px;padding:2px 8px">${r.emoji} ${r.label}</span>`;
+}
+
+function colorBorde(rol) {
+  return {admin:'#16a34a',monitor:'#2563eb',ayudante:'#f59e0b'}[rol]||'#94a3b8';
+}
+
+function renderLista(lista) {
+  document.getElementById('contador').textContent = lista.length;
+  const el = document.getElementById('lista-monitores');
+  if (!lista.length){ showEmpty('lista-monitores','Sin monitores con ese filtro'); return; }
+
+  el.innerHTML = lista.map(m => {
+    const inactivo = m.activo===false;
+    const invitado = m.user_id ? '' : m.email
+      ? `<span class="badge-pendiente">⏳ Invitación pendiente</span>`
+      : `<span class="badge-inactivo">Sin acceso</span>`;
+
+    const avatarEl = m.foto_url
+      ? `<img class="av-foto" src="${m.foto_url}" alt="${m.nombre}" onerror="this.style.display='none'">`
+      : avatarHTML(m.nombre);
+
+    return `
+    <div class="card" id="card-${m.id}"
+         style="border-left-color:${inactivo?'#94a3b8':colorBorde(m.rol)};opacity:${inactivo?'0.55':'1'}">
+      <div class="card-main" onclick="toggleCard('${m.id}')">
+        ${avatarEl}
+        <div class="ci">
+          <div class="cn">${m.nombre}${inactivo?' <span style="font-size:10px;color:#94a3b8;font-weight:700">(Baja)</span>':''}</div>
+          <div class="cm">
+            ${chipRol(m.rol)}
+            ${invitado}
+            ${m.tarifa_hora ? `<span class="chip cgr">${m.tarifa_hora}€/h</span>` : ''}
+          </div>
+        </div>
+        <div class="chev" id="chev-${m.id}">▼</div>
+      </div>
+      <div class="exp" id="exp-${m.id}">
+        <div class="dl">Email</div>    <div class="dv">${m.email||'—'}</div>
+        <div class="dl">Teléfono</div> <div class="dv">${m.telefono||'—'}</div>
+        <div class="dl">Tarifa</div>   <div class="dv">${m.tarifa_hora?m.tarifa_hora+'€/h':'—'}</div>
+        <div class="dl">Acceso app</div><div class="dv" id="acc-${m.id}">${m.user_id?'✅ Vinculado':m.email?'⏳ Pendiente':'❌ Sin invitar'}</div>
+        <!-- Grupos asignados lazy -->
+        <div id="hist-${m.id}" style="margin-top:6px"></div>
+        <div class="abtns">
+          <button class="abtn" onclick="abrirInvitar('${m.id}')">📧 Invitar</button>
+          <button class="abtn prim" onclick="abrirEditarId('${m.id}')">✏️ Editar</button>
+          ${inactivo
+            ? `<button class="abtn" style="background:#f0fdf4;color:#16a34a;border-color:#bbf7d0" onclick="toggleBaja('${m.id}',true)">✓ Dar alta</button>`
+            : `<button class="abtn" style="background:#fff7ed;color:#f59e0b;border-color:#fde68a" onclick="toggleBaja('${m.id}',false)">⏸ Dar baja</button>`
+          }
+          <button class="abtn dang" onclick="confirmarEliminar('${m.id}','${m.nombre.replace(/'/g,"\\'")}')">🗑</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// Lazy: grupos del monitor
+function toggleCard(id) {
+  const exp  = document.getElementById('exp-' + id);
+  const chev = document.getElementById('chev-' + id);
+  const card = document.getElementById('card-' + id);
+  if (!exp) return;
+  const abierta = exp.classList.toggle('open');
+  if (chev) chev.classList.toggle('open', abierta);
+  if (card) card.classList.toggle('card-open', abierta);
+  if (abierta) cargarGruposMonitor(id);
+}
+
+async function cargarGruposMonitor(monitorId) {
+  const el = document.getElementById('hist-' + monitorId);
+  if (!el || el.dataset.cargado) return;
+  el.dataset.cargado = '1';
+  el.innerHTML = '<div style="font-size:11px;color:#94a3b8;padding:4px 0">Cargando grupos…</div>';
+  try {
+    const { data } = await _sb.from('grupos').select('id,nombre,nivel')
+      .eq('escuela_id', Store.escuelaId)
+      .eq('monitor_id', monitorId);
+    if (!data||!data.length) {
+      el.innerHTML = '<div style="font-size:11px;color:#94a3b8;padding:4px 0">Sin grupos asignados</div>';
+      return;
+    }
+    el.innerHTML = `
+      <div style="font-size:10px;font-weight:900;color:#2563eb;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">📋 Grupos asignados</div>
+      <div style="background:#f8fafc;border-radius:10px;padding:4px 10px">
+        ${data.map(g=>`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f1f5f9">
+          <div style="flex:1"><div style="font-size:12px;font-weight:800;color:#1e293b">${g.nombre}</div>
+          <div style="font-size:10px;color:#94a3b8;font-weight:600">${g.nivel||''}</div></div>
+        </div>`).join('')}
+      </div>`;
+  } catch(e) {
+    el.innerHTML = '<div style="font-size:11px;color:#e05a5a;padding:4px 0">Error al cargar grupos</div>';
+  }
+}
+
+// ════════════════════════════════════════════════
+//  PERMISOS UI
+// ════════════════════════════════════════════════
+function renderPermisos() {
+  const grid = document.getElementById('perm-grid');
+  grid.innerHTML = PERMISOS_DEF.map(p => {
+    const act = _permisosActivos.has(p.id);
+    return `
+    <div class="perm-item${act?' activo':''}" id="perm-${p.id}" onclick="togglePermiso('${p.id}')">
+      <div class="perm-toggle">${act?'✓':''}</div>
+      <div>
+        <div class="perm-nombre">${p.nombre}</div>
+        <div class="perm-desc">${p.desc}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function togglePermiso(id) {
+  if (_permisosActivos.has(id)) _permisosActivos.delete(id);
+  else _permisosActivos.add(id);
+  renderPermisos();
+  marcarPresetActivo();
+}
+
+function aplicarPreset(rol) {
+  _permisosActivos = new Set(PRESETS[rol]||[]);
+  renderPermisos();
+  marcarPresetActivo();
+}
+
+function marcarPresetActivo() {
+  document.querySelectorAll('.preset-btn').forEach(btn => {
+    const r = btn.dataset.rol;
+    const preset = new Set(PRESETS[r]||[]);
+    const coincide = preset.size === _permisosActivos.size &&
+      [...preset].every(p=>_permisosActivos.has(p));
+    btn.className = 'preset-btn' + (coincide ? ` sel-${r}` : '');
+  });
+}
+
+function onRolChange() {
+  // Al cambiar el rol, sugerir preset pero no forzar
+  const rol = document.getElementById('mo-rol').value;
+  aplicarPreset(rol);
+}
+
+// ════════════════════════════════════════════════
+//  CRUD
+// ════════════════════════════════════════════════
+function abrirNuevo() {
+  document.getElementById('sh-titulo').textContent = 'Nuevo monitor';
+  document.getElementById('mo-id').value       = '';
+  document.getElementById('mo-nombre').value   = '';
+  document.getElementById('mo-email').value    = '';
+  document.getElementById('mo-telefono').value = '';
+  document.getElementById('mo-tarifa').value   = '';
+  document.getElementById('mo-foto-url').value = '';
+  document.getElementById('mo-foto-actual').value = '';
+  document.getElementById('mo-rol').value = 'monitor';
+  _fotoFile = null;
+  _permisosActivos = new Set(PRESETS['monitor']);
+  ocultarFotoPreview();
+  renderPermisos();
+  marcarPresetActivo();
+  nselSync('mo-rol');
+  openSheet('sh-monitor');
+}
+
+function abrirEditarId(id) {
+  const m = _monitores.find(x=>x.id===id);
+  if (m) abrirEditar(m);
+}
+
+async function abrirEditar(m) {
+  document.getElementById('sh-titulo').textContent    = 'Editar monitor';
+  document.getElementById('mo-id').value              = m.id;
+  document.getElementById('mo-nombre').value          = m.nombre;
+  document.getElementById('mo-email').value           = m.email||'';
+  document.getElementById('mo-telefono').value        = m.telefono||'';
+  document.getElementById('mo-tarifa').value          = m.tarifa_hora||'';
+  document.getElementById('mo-foto-url').value        = m.foto_url||'';
+  document.getElementById('mo-foto-actual').value     = m.foto_url||'';
+  document.getElementById('mo-rol').value             = m.rol||'monitor';
+  _fotoFile = null;
+  if (m.foto_url) mostrarFotoPreview(m.foto_url);
+  else ocultarFotoPreview();
+  // Cargar permisos desde Supabase
+  _permisosActivos = new Set();
+  try {
+    const { data } = await _sb.from('monitor_permisos')
+      .select('permiso').eq('monitor_id', m.id);
+    if (data) data.forEach(r=>_permisosActivos.add(r.permiso));
+    else _permisosActivos = new Set(PRESETS[m.rol]||[]);
+  } catch(e) {
+    _permisosActivos = new Set(PRESETS[m.rol]||[]);
+  }
+  renderPermisos();
+  marcarPresetActivo();
+  nselSync('mo-rol');
+  openSheet('sh-monitor');
+}
+
+async function guardar() {
+  const nombre = document.getElementById('mo-nombre').value.trim();
+  if (!nombre) { toast('Escribe el nombre','warn'); return; }
+
+  const idVal      = document.getElementById('mo-id').value;
+  const emailVal   = document.getElementById('mo-email').value.trim();
+  const telVal     = document.getElementById('mo-telefono').value.trim();
+  const tarifaVal  = parseFloat(document.getElementById('mo-tarifa').value)||null;
+  const rolVal     = document.getElementById('mo-rol').value;
+  const urlManual  = document.getElementById('mo-foto-url').value.trim();
+  const fotoActual = document.getElementById('mo-foto-actual').value;
+
+  const monitor = {
+    nombre,
+    email:       emailVal  || null,
+    telefono:    telVal    || null,
+    tarifa_hora: tarifaVal,
+    rol:         rolVal,
+    foto_url:    urlManual || fotoActual || null,
+    escuela_id:  Store.escuelaId,
+  };
+
+  try {
+    let saved;
+    if (idVal) {
+      const { data, error } = await _sb.from('monitores').update(monitor)
+        .eq('id', idVal).eq('escuela_id', Store.escuelaId).select().single();
+      if (error) throw error;
+      saved = data;
+    } else {
+      const { id:_, ...sinId } = monitor;
+      const { data, error } = await _sb.from('monitores').insert(sinId).select().single();
+      if (error) throw error;
+      saved = data;
+    }
+
+    // Subir foto si hay fichero
+    if (_fotoFile && saved?.id) {
+      try {
+        const ext  = _fotoFile.name.split('.').pop();
+        const path = `${Store.escuelaId}/monitor_${saved.id}.${ext}`;
+        await _sb.storage.from('fotos-alumnos').upload(path, _fotoFile, { upsert:true });
+        const { data:urlData } = _sb.storage.from('fotos-alumnos').getPublicUrl(path);
+        if (urlData?.publicUrl) {
+          await _sb.from('monitores').update({ foto_url: urlData.publicUrl })
+            .eq('id', saved.id);
+        }
+      } catch(fe) { console.warn('Error foto monitor:', fe); }
+    }
+
+    // Guardar permisos: borrar anteriores + insertar nuevos
+    await _sb.from('monitor_permisos').delete().eq('monitor_id', saved.id);
+    if (_permisosActivos.size) {
+      const rows = [..._permisosActivos].map(p=>({
+        monitor_id: saved.id,
+        escuela_id: Store.escuelaId,
+        permiso:    p,
+      }));
+      await _sb.from('monitor_permisos').insert(rows);
+    }
+
+    closeSheet('sh-monitor');
+    toast('Monitor guardado ✓','ok');
+    await cargar();
+  } catch(e) {
+    console.error(e);
+    toast('Error: '+(e.message||JSON.stringify(e)),'err');
+  }
+}
+
+async function toggleBaja(id, activar) {
+  const nombre = _monitores.find(m=>m.id===id)?.nombre||'';
+  const msg = activar ? `¿Dar de alta a ${nombre}?` : `¿Dar de baja a ${nombre}?`;
+  confirmar(msg, async () => {
+    try {
+      await _sb.from('monitores').update({ activo: activar })
+        .eq('id', id).eq('escuela_id', Store.escuelaId);
+      toast(activar ? `${nombre} dado de alta ✓` : `${nombre} dado de baja`,'ok');
+      await cargar();
+    } catch(e) { toast('Error al cambiar estado','err'); }
+  });
+}
+
+function confirmarEliminar(id, nombre) {
+  document.getElementById('confirm-titulo').textContent  = '¿Eliminar monitor?';
+  document.getElementById('confirm-texto').textContent   = `¿Eliminar a ${nombre}? Esta acción no se puede deshacer.`;
+  document.getElementById('confirm-overlay').classList.add('open');
+  document.getElementById('confirm-ok').onclick = async () => {
+    document.getElementById('confirm-overlay').classList.remove('open');
+    try {
+      await _sb.from('monitor_permisos').delete().eq('monitor_id', id);
+      await _sb.from('monitores').delete().eq('id', id).eq('escuela_id', Store.escuelaId);
+      toast('Monitor eliminado','ok');
+      await cargar();
+    } catch(e) { toast('Error al eliminar','err'); console.error(e); }
+  };
+}
+
+// ════════════════════════════════════════════════
+//  INVITACIÓN — magic link via Supabase
+// ════════════════════════════════════════════════
+function abrirInvitar(id) {
+  const m = _monitores.find(x=>x.id===id);
+  if (!m) return;
+  document.getElementById('inv-monitor-nombre').textContent = m.nombre;
+  const estadoBox = document.getElementById('inv-estado-box');
+  const emailBox  = document.getElementById('inv-email-box');
+
+  if (m.user_id) {
+    estadoBox.innerHTML = `<div class="inv-box">
+      <div style="font-size:13px;font-weight:900;color:#15803d;margin-bottom:4px">✅ Monitor vinculado</div>
+      <div style="font-size:12px;font-weight:600;color:#166534">Este monitor ya tiene acceso a la app. Su email de acceso es <strong>${m.email||'—'}</strong>.</div>
+    </div>`;
+    emailBox.style.display = 'none';
+  } else if (m.email) {
+    estadoBox.innerHTML = `<div class="inv-box-warn">
+      <div style="font-size:13px;font-weight:900;color:#92400e;margin-bottom:4px">⏳ Invitación pendiente</div>
+      <div style="font-size:12px;font-weight:600;color:#92400e">Se envió invitación a <strong>${m.email}</strong>. Aún no ha accedido.</div>
+    </div>`;
+    document.getElementById('inv-email').value = m.email;
+    emailBox.style.display = 'block';
+    document.getElementById('btn-enviar-inv').textContent = '🔁 Reenviar invitación';
+  } else {
+    estadoBox.innerHTML = '';
+    document.getElementById('inv-email').value = '';
+    emailBox.style.display = 'block';
+    document.getElementById('btn-enviar-inv').textContent = '📧 Enviar invitación';
+  }
+
+  openSheet('sh-invitar');
+  // Guardar id en el sheet para usarlo al enviar
+  document.getElementById('sh-invitar').dataset.monitorId = id;
+}
+
+async function enviarInvitacion() {
+  const id    = document.getElementById('sh-invitar').dataset.monitorId;
+  const email = document.getElementById('inv-email').value.trim();
+  if (!email) { toast('Introduce el email','warn'); return; }
+
+  const btn = document.getElementById('btn-enviar-inv');
+  btn.disabled = true; btn.textContent = 'Enviando…';
+
+  try {
+    // Actualizar email en el registro del monitor
+    await _sb.from('monitores').update({ email, invitado_en: new Date().toISOString() })
+      .eq('id', id).eq('escuela_id', Store.escuelaId);
+
+    // Enviar magic link con Supabase OTP
+    const { error } = await _sb.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: window.location.origin + '/index.html',
+        data: { monitor_id: id, escuela_id: Store.escuelaId },
+      }
+    });
+    if (error) throw error;
+
+    closeSheet('sh-invitar');
+    toast('✅ Invitación enviada a ' + email, 'ok');
+    await cargar();
+  } catch(e) {
+    console.error(e);
+    toast('Error al enviar: '+(e.message||''), 'err');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ════════════════════════════════════════════════
+//  FOTO / AVATAR
+// ════════════════════════════════════════════════
+function filtrarAvatares(tipo) {
+  _filtroAvatar = tipo;
+  const btnH = document.getElementById('btn-filtro-h');
+  const btnM = document.getElementById('btn-filtro-m');
+  if (tipo==='h') {
+    btnH.style.cssText='flex:1;padding:9px;border-radius:10px;border:2px solid #2563eb;background:#2563eb;color:#fff;font-family:Nunito,sans-serif;font-size:13px;font-weight:900;cursor:pointer';
+    btnM.style.cssText='flex:1;padding:9px;border-radius:10px;border:2px solid #e2e8f0;background:#f8fafc;color:#64748b;font-family:Nunito,sans-serif;font-size:13px;font-weight:900;cursor:pointer';
+  } else {
+    btnM.style.cssText='flex:1;padding:9px;border-radius:10px;border:2px solid #2563eb;background:#2563eb;color:#fff;font-family:Nunito,sans-serif;font-size:13px;font-weight:900;cursor:pointer';
+    btnH.style.cssText='flex:1;padding:9px;border-radius:10px;border:2px solid #e2e8f0;background:#f8fafc;color:#64748b;font-family:Nunito,sans-serif;font-size:13px;font-weight:900;cursor:pointer';
+  }
+  renderAvatarGrid();
+}
+
+function renderAvatarGrid() {
+  const lista = _filtroAvatar==='h' ? AVATARES_H : AVATARES_M;
+  const grid  = document.getElementById('avatares-grid');
+  grid.innerHTML = lista.map(src=>`
+    <div onclick="selAvatar(this,'${src}')" style="aspect-ratio:1;border-radius:12px;overflow:hidden;cursor:pointer;border:2.5px solid transparent;transition:all .12s">
+      <img src="${src}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.style.display='none'">
+    </div>`).join('');
+}
+
+function abrirSelectorFoto() {
+  _avatarSeleccionado = null;
+  openSheet('sh-foto-avatar');
+  setTimeout(()=>filtrarAvatares('h'),50);
+}
+function selAvatar(el, src) {
+  document.querySelectorAll('#avatares-grid > div').forEach(d=>{d.style.borderColor='transparent';d.style.transform='';});
+  el.style.borderColor='#2563eb'; el.style.transform='scale(1.1)';
+  _avatarSeleccionado = src;
+}
+function confirmarFoto() {
+  if (_avatarSeleccionado) {
+    document.getElementById('mo-foto-url').value = _avatarSeleccionado;
+    actualizarBtnFoto(_avatarSeleccionado,'Avatar seleccionado');
+    _fotoFile = null;
+  }
+  closeSheet('sh-foto-avatar');
+}
+function elegirCamara() {
+  const inp = document.getElementById('foto-file-input');
+  inp.setAttribute('capture','environment'); inp.click();
+  closeSheet('sh-foto-avatar');
+}
+function elegirGaleria() {
+  const inp = document.getElementById('foto-file-input');
+  inp.removeAttribute('capture'); inp.click();
+  closeSheet('sh-foto-avatar');
+}
+function onFotoChange(e) {
+  const file = e.target.files[0]; if (!file) return;
+  _fotoFile = file;
+  const reader = new FileReader();
+  reader.onload = ev => { actualizarBtnFoto(ev.target.result,'Foto seleccionada'); document.getElementById('mo-foto-url').value=''; };
+  reader.readAsDataURL(file);
+}
+function actualizarBtnFoto(src, label) {
+  document.getElementById('foto-btn-preview').innerHTML=`<img src="${src}" style="width:100%;height:100%;object-fit:cover;border-radius:6px">`;
+  document.getElementById('foto-btn-main').textContent=label;
+  document.getElementById('foto-btn-sub').textContent='Toca para cambiar';
+}
+function mostrarFotoPreview(src) { actualizarBtnFoto(src,'Foto actual'); }
+function ocultarFotoPreview() {
+  document.getElementById('foto-btn-preview').innerHTML='👤';
+  document.getElementById('foto-btn-main').textContent='Elegir foto o avatar';
+  document.getElementById('foto-btn-sub').textContent='Cámara, galería o avatar';
+}
+
+// ════════════════════════════════════════════════
+//  CONFIRMAR genérico
+// ════════════════════════════════════════════════
+function confirmar(msg, fn) {
+  document.getElementById('confirm-titulo').textContent = msg;
+  document.getElementById('confirm-texto').textContent  = '';
+  document.getElementById('confirm-overlay').classList.add('open');
+  document.getElementById('confirm-ok').textContent     = 'Confirmar';
+  document.getElementById('confirm-ok').onclick = () => {
+    document.getElementById('confirm-overlay').classList.remove('open');
+    fn();
+  };
+}
+
+// ════════════════════════════════════════════════
+//  CARGA
+// ════════════════════════════════════════════════
+async function cargar() {
+  showLoading('lista-monitores');
+  const { data, error } = await _sb.from('monitores').select('*')
+    .eq('escuela_id', Store.escuelaId).order('nombre');
+  if (error) { showError('lista-monitores','Error al cargar monitores'); return; }
+  _monitores = data||[];
+  filtrar();
+}
+
+// ════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════
+async function init() {
+  renderNav('monitores');
+  await initStore();
+  renderHeader({ titulo:'Escuela de Pádel', subtitulo:'Monitores', icono:'icons/monitores.png', botonDerecho:'menu' });
+  await cargar();
+  nselInit('filtro-rol');
+  nselInit('filtro-estado');
+  nselInit('mo-rol');
+}
+
+function abrirInfo() { openSheet('sh-info-pagina'); }
+
+init();
+</script>
+</body>
+</html>

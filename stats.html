@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>Stats — Escuela de Pádel</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .stats-sec { background:var(--card); border-radius:12px; margin-bottom:9px; border:1.5px solid var(--borde); border-left-width:4px; overflow:hidden; }
+    .stats-sec-hdr { padding:10px 13px 6px; font-size:11px; font-weight:900; color:var(--sub); text-transform:uppercase; letter-spacing:.5px; border-bottom:1px solid #f0f4f8; }
+
+    /* ocupación grupos */
+    .ocup-list  { padding:6px 11px 10px; }
+    .ocup-item  { margin-bottom:10px; }
+    .ocup-item:last-child { margin-bottom:0; }
+    .ocup-head  { display:flex; justify-content:space-between; margin-bottom:4px; }
+    .ocup-name  { font-size:11px; font-weight:800; color:var(--texto); }
+    .ocup-meta  { font-size:10px; color:var(--sutil); }
+    .ocup-bar-row { display:flex; align-items:center; gap:6px; }
+    .ocup-track { flex:1; height:18px; background:#f1f5f9; border-radius:8px; overflow:hidden; }
+    .ocup-fill  { height:100%; border-radius:8px; }
+    .ocup-nums  { font-size:10px; font-weight:900; min-width:24px; text-align:right; }
+
+    /* alertas */
+    .alert-list { padding:8px 11px 10px; display:flex; flex-direction:column; gap:6px; }
+    .alert-item { border-radius:8px; padding:7px 10px; display:flex; align-items:center; gap:7px; }
+    .alert-msg  { font-size:12px; font-weight:700; }
+
+    /* ranking torneos */
+    .rank-list { padding:6px 11px 10px; }
+    .rank-item { display:flex; align-items:center; gap:8px; margin-bottom:7px; }
+    .rank-item:last-child { margin-bottom:0; }
+    .rank-pos  { width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:900; flex-shrink:0; }
+    .rank-name { flex:1; font-size:12px; font-weight:800; color:var(--texto); }
+    .rank-pts  { font-size:13px; font-weight:900; color:var(--morado); }
+
+    /* año selector en cobros */
+    .anio-row  { display:flex; align-items:center; justify-content:space-between; padding:8px 13px 0; }
+    .anio-lbl  { font-size:11px; font-weight:900; color:var(--sub); text-transform:uppercase; letter-spacing:.5px; }
+    .anio-sel  {
+      appearance:none;
+      background:#f1f5f9 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2364748b' stroke-width='1.8' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 9px center;
+      border:1.5px solid transparent; border-radius:8px;
+      padding:5px 26px 5px 10px; font-size:12px; font-weight:800; color:var(--texto);
+      outline:none; cursor:pointer; font-family:Nunito,sans-serif;
+    }
+    /* anio picker custom */
+    .anio-wrap{position:relative;display:inline-block}
+    .anio-trigger{display:inline-flex;align-items:center;gap:6px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+    .anio-drop{position:absolute;top:calc(100% + 4px);left:0;min-width:90px;width:max-content;z-index:300;background:var(--card);border:2px solid var(--azul);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.13);overflow:hidden;display:none}
+    .anio-drop.open{display:block}
+    .anio-opt{padding:9px 0;font-size:13px;font-weight:800;color:var(--texto);text-align:center;cursor:pointer}
+    .anio-opt.sel{color:var(--azul);background:#eff6ff}
+  </style>
+</head>
+<body>
+<div class="page">
+  <div id="header-container"></div>
+  <nav id="nav-container"></nav>
+
+  <main class="content">
+
+    <!-- Título -->
+    <div class="sec">
+      <img src="icons/stats.png">
+      <div class="sec-title">Estadísticas <button onclick="abrirInfo()" style="background:none;border:none;color:#2563eb;font-size:13px;font-weight:800;cursor:pointer;padding:0;font-family:Nunito,sans-serif">Info.</button></div>
+    </div>
+
+    <!-- Sección -->
+    <div style="padding:0 0 8px">
+      <div class="filter-label">Sección</div>
+      <select id="sel-seccion" style="display:none" onchange="sfSecFromSel(this.value)">
+        <option value="general">General</option>
+        <option value="alumnos">Alumnos</option>
+        <option value="grupos">Grupos</option>
+        <option value="ejercicios">Ejercicios</option>
+        <option value="clases">Clases</option>
+        <option value="torneos">Torneos</option>
+        <option value="cobros">Cobros</option>
+        <option value="pistas">Pistas</option>
+      </select>
+      <div class="nsel-wrap" id="sel-seccion-nsel"></div>
+    </div>
+
+    <!-- Filtros Mes + Año -->
+    <div class="filters f2" style="margin-top:8px">
+      <div>
+        <div class="filter-label">Mes</div>
+        <div class="fsel-wrap"><select class="fsel" id="sel-mes" onchange="sfFecha()">
+          <option value="">Todos</option>
+          <option value="0">Enero</option><option value="1">Febrero</option>
+          <option value="2">Marzo</option><option value="3">Abril</option>
+          <option value="4">Mayo</option><option value="5">Junio</option>
+          <option value="6">Julio</option><option value="7">Agosto</option>
+          <option value="8">Septiembre</option><option value="9">Octubre</option>
+          <option value="10">Noviembre</option><option value="11">Diciembre</option>
+        </select></div>
+      </div>
+      <div>
+        <div class="filter-label">Año</div>
+        <div class="fsel-wrap"><select class="fsel" id="sel-anio" onchange="sfFecha()"></select></div>
+      </div>
+    </div>
+
+    <div id="stats-contenido" style="margin-top:4px">
+      <div class="loading"><div class="spinner"></div></div>
+    </div>
+
+  </main>
+</div>
+
+
+  <!-- Sheet info página -->
+  <div class="overlay" id="sh-info-pagina">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">Estadísticas</div>
+      <div style="font-size:14px;font-weight:600;color:var(--sub);line-height:1.65;padding-bottom:8px">Resumen de toda la actividad de tu escuela: alumnos, grupos, clases, ejercicios, torneos y cobros. Filtrable por mes y año. Útil para ver tendencias y detectar alumnos sin pagar o sin grupo asignado.</div>
+      <div class="sheet-btns">
+        <button class="sbtn prim" style="flex:1" onclick="closeSheet('sh-info-pagina')">Entendido</button>
+      </div>
+    </div>
+  </div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/store.js"></script>
+<script src="js/ui.js"></script>
+<script>
+let _seccion     = 'general';
+let _mes         = null; // null = todos los meses del año
+let _anio        = new Date().getFullYear();
+let _datos       = {};
+let _aniosCobros = new Date().getFullYear();
+
+// ── Navegación ────────────────────────────────
+function sfSec(btn) {
+  document.querySelectorAll('[data-sec]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  _seccion = btn.dataset.sec;
+  renderStats();
+}
+function sfSecFromSel(val) {
+  _seccion = val;
+  renderStats();
+}
+function sfFecha() {
+  const m = document.getElementById('sel-mes').value;
+  const a = document.getElementById('sel-anio').value;
+  _mes  = m === '' ? null : +m;
+  _anio = +a;
+  cargar();
+}
+function cambiarAnioCobros(val) {
+  _aniosCobros = +val;
+  renderStats();
+}
+function initFiltroFecha() {
+  const hoy = new Date();
+  const anioActual = hoy.getFullYear();
+  const sel = document.getElementById('sel-anio');
+  for (let y = anioActual - 3; y <= anioActual + 1; y++) {
+    const o = document.createElement('option');
+    o.value = y; o.textContent = y;
+    if (y === anioActual) o.selected = true;
+    sel.appendChild(o);
+  }
+  // Por defecto: sin filtro de mes (todo el año)
+  document.getElementById('sel-mes').value = '';
+  _mes = null;
+  _anio = anioActual;
+}
+
+// ── Helpers ───────────────────────────────────
+function kpiRow(kpis) {
+  return `<div class="kpi-row kpi-${kpis.length <= 2 ? '2' : '3'}">${kpis.map(k => `
+    <div class="kpi ${k.color || 'azul'}">
+      <div class="kpi-val">${k.val}</div>
+      <div class="kpi-lbl">${k.lbl}</div>
+    </div>`).join('')}</div>`;
+}
+
+function barras(items, colorFill = '#2563eb') {
+  if (!items || !items.length) return '<div class="empty-state" style="margin:8px 11px">Sin datos</div>';
+  const max = Math.max(...items.map(i => i.val), 1);
+  const total = items.reduce((s, i) => s + i.val, 0) || 1;
+
+  function hexToRgba(hex, alpha) {
+    const r = parseInt(hex.slice(1,3),16);
+    const g = parseInt(hex.slice(3,5),16);
+    const b = parseInt(hex.slice(5,7),16);
+    return `rgba(${r},${g},${b},${alpha})`;
+  }
+  const bgColor = hexToRgba(colorFill, 0.15);
+
+  return `<div class="bar-section">${items.map(i => {
+    const pct = (i.val / max * 100).toFixed(0);
+    const pctTotal = Math.round(i.val / total * 100);
+    return `
+    <div class="bar-item">
+      <div class="bar-top">
+        <div class="bar-label">${i.lbl}</div>
+        <div class="bar-right"><span class="bar-val">${i.val}</span><span class="bar-pct">${pctTotal}%</span></div>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:${pct}%;background:${bgColor};border:1.5px solid ${colorFill};box-sizing:border-box"></div>
+      </div>
+    </div>`}).join('')}</div>`;
+}
+
+// ── Renders por sección ───────────────────────
+
+function secHdr(icono, titulo, color='#2563eb') {
+  return `<div class="stats-sec-hdr"><img src="${icono}" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;margin-right:6px">${titulo}</div>`;
+}
+function sec(icono, titulo, contenido, color='#2563eb') {
+  return `<div class="stats-sec" style="border-left-color:${color}">${secHdr(icono,titulo,color)}${contenido}</div>`;
+}
+
+function renderGeneral() {
+  const d = _datos;
+  return `
+    <div class="stats-sec" style="border-left-color:#2563eb">
+      ${secHdr('icons/inicio.png','Escuela')}
+      ${kpiRow([
+        {val:d.totalAlumnos||0,   lbl:'Alumnos',    color:'azul'},
+        {val:d.totalGrupos||0,    lbl:'Grupos',     color:'verde'},
+        {val:d.totalEjercicio||0, lbl:'Ejercicios', color:'naranja'},
+      ])}
+      ${kpiRow([
+        {val:d.totalClases||0,                    lbl:'Clases',   color:'azul'},
+        {val:d.totalTorneos||0,                   lbl:'Torneos',  color:'morado'},
+        {val:(d.totalCobrado||0).toFixed(0)+'€',  lbl:'Cobrado',  color:'verde'},
+      ])}
+    </div>
+    <div class="stats-sec" style="border-left-color:#16a34a">
+      ${secHdr('icons/clases.png','Actividad del período')}
+      ${kpiRow([
+        {val:d.alumnosNuevos||0,                      lbl:'Alumnos nuevos',    color:'verde'},
+        {val:d.clasesRealizadas||0,                   lbl:'Clases realizadas', color:'azul'},
+        {val:(d.asistenciaMedia||0).toFixed(0)+'%',   lbl:'Asistencia media',  color:'naranja'},
+      ])}
+    </div>
+    ${(d.alumnosSinGrupo||[]).length ? `
+    <div class="stats-sec" style="border-left-color:#2563eb">
+      ${secHdr('icons/alumnos.png',`Alumnos sin grupo (${(d.alumnosSinGrupo||[]).length})`)}
+      <div style="font-size:12px;color:var(--sutil);font-weight:600;line-height:1.8">
+        ${(d.alumnosSinGrupo||[]).map(a=>`<span style="display:inline-block;background:#f1f5f9;border-radius:7px;padding:2px 8px;margin:2px;font-weight:700;color:var(--texto)">${a.nombre||'—'}</span>`).join('')}
+      </div>
+    </div>` : ''}`;
+}
+
+function renderAlumnos() {
+  const d = _datos;
+  const porNivel = Object.entries(d.alumnosPorNivel||{}).map(([lbl,val])=>({lbl,val}));
+  const porGrupo = (d.gruposConAlumnos||[]).map(g=>({lbl:g.nombre,val:g.num_alumnos||0})).filter(x=>x.val>0);
+  return `
+    <div class="stats-sec" style="border-left-color:#2563eb">
+      ${secHdr('icons/alumnos.png','Totales')}
+      ${kpiRow([
+        {val:d.totalAlumnos||0,                      lbl:'Total',            color:'azul'},
+        {val:d.alumnosNuevos||0,                     lbl:'Nuevos período',   color:'verde'},
+        {val:(d.alumnosSinGrupo||[]).length,         lbl:'Sin grupo',        color:'gris'},
+      ])}
+    </div>
+    ${porNivel.length ? `
+    <div class="stats-sec" style="border-left-color:#2563eb">
+      ${secHdr('icons/alumnos.png','Por nivel')}
+      ${barras(porNivel,'#2563eb')}
+    </div>` : ''}
+    ${porGrupo.length ? `
+    <div class="stats-sec" style="border-left-color:#7c3aed">
+      ${secHdr('icons/grupos.png','Por grupo')}
+      ${barras(porGrupo,'#7c3aed')}
+    </div>` : ''}
+    ${(d.evMensualItems||[]).length > 1 ? `
+    <div class="stats-sec" style="border-left-color:#2563eb">
+      ${secHdr('icons/alumnos.png','Altas por mes')}
+      ${barras(d.evMensualItems,'#16a34a')}
+    </div>` : ''}`;
+}
+
+function renderGrupos() {
+  const d = _datos;
+  const gs = d.gruposConAlumnos || [];
+  const porMonitor = {};
+  gs.forEach(g => { if (g.monitor) porMonitor[g.monitor] = (porMonitor[g.monitor]||0) + (g.num_alumnos||0); });
+  const monitores = Object.entries(porMonitor).map(([lbl,val])=>({lbl,val})).sort((a,b)=>b.val-a.val);
+
+  const ocupHtml = gs.length ? `<div class="ocup-list">${gs.map(g => {
+    const max = 12;
+    const pct = Math.min(Math.round((g.num_alumnos||0)/max*100), 100);
+    const borderColor = pct>=90?'#e05a5a':pct>=70?'#d97706':'#7c3aed';
+    function hexAlpha(hex,a){const r=parseInt(hex.slice(1,3),16),g2=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return `rgba(${r},${g2},${b},${a})`;}
+    const bgFill = hexAlpha(borderColor, 0.15);
+    return `<div class="ocup-item">
+      <div class="ocup-head">
+        <span class="ocup-name">${g.nombre}</span>
+        <span class="ocup-meta">${g.monitor||'—'} · ${g.pista||'—'}</span>
+      </div>
+      <div class="ocup-bar-row">
+        <div class="ocup-track"><div class="ocup-fill" style="width:${pct}%;background:${bgFill};border:1.5px solid ${borderColor};box-sizing:border-box"></div></div>
+        <div class="ocup-nums" style="color:${borderColor}">${g.num_alumnos||0}</div>
+      </div>
+    </div>`;
+  }).join('')}</div>` : '<div class="empty-state" style="margin:8px 11px">Sin grupos</div>';
+
+  return `
+    <div class="stats-sec" style="border-left-color:#7c3aed">
+      ${secHdr('icons/grupos.png','Totales')}
+      ${kpiRow([
+        {val:d.totalGrupos||0, lbl:'Grupos', color:'azul'},
+        {val:gs.reduce((s,g)=>s+(g.num_alumnos||0),0), lbl:'Alumnos total', color:'verde'},
+      ])}
+    </div>
+    <div class="stats-sec" style="border-left-color:#7c3aed">
+      ${secHdr('icons/grupos.png','Alumnos por grupo')}
+      ${ocupHtml}
+    </div>
+    ${monitores.length ? `
+    <div class="stats-sec" style="border-left-color:#7c3aed">
+      ${secHdr('icons/grupos.png','Alumnos por monitor')}
+      ${barras(monitores,'#16a34a')}
+    </div>` : ''}`;
+}
+
+function renderEjercicios() {
+  const d = _datos;
+  const porCat = {};
+  (d.ejercicios||[]).forEach(e => { const k=e.categoria||'Sin categoría'; porCat[k]=(porCat[k]||0)+1; });
+  const catItems = Object.entries(porCat).map(([lbl,val])=>({lbl,val})).sort((a,b)=>b.val-a.val);
+  const top = [...(d.ejercicios||[])].sort((a,b)=>(b.usos||0)-(a.usos||0)).slice(0,6).map(e=>({lbl:e.nombre,val:e.usos||0}));
+  const inactivos = (d.ejerciciosTotal||0)-(d.totalEjercicio||0);
+  return `
+    <div class="stats-sec" style="border-left-color:#f59e0b">
+      ${secHdr('icons/ejercicios.png','Biblioteca')}
+      ${kpiRow([
+        {val:d.ejerciciosTotal||0, lbl:'Total',    color:'naranja'},
+        {val:d.totalEjercicio||0,  lbl:'Activos',  color:'verde'},
+        {val:inactivos,            lbl:'Inactivos', color:'gris'},
+      ])}
+    </div>
+    ${catItems.length ? `
+    <div class="stats-sec" style="border-left-color:#f59e0b">
+      ${secHdr('icons/ejercicios.png','Por categoría')}
+      ${barras(catItems,'#f59e0b')}
+    </div>` : ''}
+    ${top.length ? `
+    <div class="stats-sec" style="border-left-color:#f59e0b">
+      ${secHdr('icons/ejercicios.png','Más usados')}
+      ${barras(top,'#2563eb')}
+    </div>` : ''}`;
+}
+
+function renderClases() {
+  const d = _datos;
+  const estados = [
+    {lbl:'Realizadas',  val:d.clasesPorEstado?.Realizada||0},
+    {lbl:'Programadas', val:d.clasesPorEstado?.Programada||0},
+    {lbl:'Suspendidas', val:d.clasesPorEstado?.Suspendida||0},
+  ];
+  const porTipo = {};
+  (d.clasesData||[]).forEach(c=>{ if(c.tipo_clase) porTipo[c.tipo_clase]=(porTipo[c.tipo_clase]||0)+1; });
+  const tipoItems = Object.entries(porTipo).map(([lbl,val])=>({lbl,val})).sort((a,b)=>b.val-a.val);
+  const porGrupoMap = {};
+  (d.clasesData||[]).forEach(c=>{ const n=d.gruposMap?.[c.grupo_id]||'Sin grupo'; porGrupoMap[n]=(porGrupoMap[n]||0)+1; });
+  const grupoItems = Object.entries(porGrupoMap).map(([lbl,val])=>({lbl,val})).sort((a,b)=>b.val-a.val);
+  const monItems = Object.entries(d.clasesPorMonitor||{}).map(([lbl,val])=>({lbl,val})).sort((a,b)=>b.val-a.val);
+
+  return `
+    <div class="stats-sec" style="border-left-color:#16a34a">
+      ${secHdr('icons/clases.png','Totales')}
+      ${kpiRow([
+        {val:d.totalClases||0,                      lbl:'Total',       color:'azul'},
+        {val:d.clasesPorEstado?.Realizada||0,       lbl:'Realizadas',  color:'verde'},
+        {val:d.clasesPorEstado?.Suspendida||0,      lbl:'Suspendidas', color:'rojo'},
+      ])}
+      ${kpiRow([
+        {val:(d.asistenciaMedia||0).toFixed(0)+'%', lbl:'Asistencia media',  color:'naranja'},
+        {val:(d.ejerciciosPorClase||0).toFixed(1),  lbl:'Ejercicios/clase',  color:'azul'},
+        {val:d.clasesPorEstado?.Programada||0,      lbl:'Programadas',       color:'gris'},
+      ])}
+    </div>
+    <div class="stats-sec" style="border-left-color:#16a34a">
+      ${secHdr('icons/clases.png','Por estado')}
+      ${barras(estados,'#2563eb')}
+    </div>
+    ${(d.diasActivos||[]).length ? `
+    <div class="stats-sec" style="border-left-color:#16a34a">
+      ${secHdr('icons/clases.png','Días más activos')}
+      ${barras(d.diasActivos,'#16a34a')}
+    </div>` : ''}
+    ${monItems.length ? `
+    <div class="stats-sec" style="border-left-color:#7c3aed">
+      ${secHdr('icons/grupos.png','Clases por monitor')}
+      ${barras(monItems,'#7c3aed')}
+    </div>` : ''}
+    ${tipoItems.length ? `
+    <div class="stats-sec" style="border-left-color:#16a34a">
+      ${secHdr('icons/clases.png','Por tipo')}
+      ${barras(tipoItems,'#16a34a')}
+    </div>` : ''}
+    ${grupoItems.length ? `
+    <div class="stats-sec" style="border-left-color:#7c3aed">
+      ${secHdr('icons/grupos.png','Por grupo')}
+      ${barras(grupoItems,'#7c3aed')}
+    </div>` : ''}`;
+}
+
+function renderTorneos() {
+  const d = _datos;
+  const porTipo = {};
+  (d.torneosData||[]).forEach(t=>{ const k=t.tipo||'Otro'; porTipo[k]=(porTipo[k]||0)+1; });
+  const tipoItems = Object.entries(porTipo).map(([lbl,val])=>({lbl,val})).sort((a,b)=>b.val-a.val);
+
+  return `
+    <div class="stats-sec" style="border-left-color:#7c3aed">
+      ${secHdr('icons/torneos.png','Estado')}
+      ${kpiRow([
+        {val:d.totalTorneos||0,       lbl:'Total',       color:'morado'},
+        {val:d.torneosEnCurso||0,     lbl:'En curso',    color:'naranja'},
+        {val:d.torneosFinalizados||0, lbl:'Finalizados', color:'verde'},
+      ])}
+      ${kpiRow([
+        {val:d.mediajugadoresTorneo||0, lbl:'Media jugadores', color:'azul'},
+      ])}
+    </div>
+    ${tipoItems.length ? `
+    <div class="stats-sec" style="border-left-color:#7c3aed">
+      ${secHdr('icons/torneos.png','Por tipo')}
+      ${barras(tipoItems,'#7c3aed')}
+    </div>` : ''}
+    ${(d.rankingJugadores||[]).length ? `
+    <div class="stats-sec" style="border-left-color:#e05a5a">
+      ${secHdr('icons/stats.png','Ranking global (% victorias)')}
+      <div class="rank-list">
+        ${(d.rankingJugadores||[]).map((j,i)=>{
+          const medals=['#fbbf24','#94a3b8','#d97706'];
+          return `<div class="rank-item">
+            <div class="rank-pos" style="background:${medals[i]||'#f1f5f9'};color:${i<3?'#fff':'#64748b'}">${i+1}</div>
+            <div class="rank-name">${j.nombre}</div>
+            <div class="rank-pts" style="display:flex;flex-direction:column;align-items:flex-end;gap:1px">
+              <span style="font-size:13px;font-weight:900;color:var(--azul)">${j.ratio}%</span>
+              <span style="font-size:10px;font-weight:600;color:var(--sutil)">${j.victorias}V/${j.partidos}PJ</span>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>` : ''}`;
+}
+
+function renderCobros() {
+  const d = _datos;
+  const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const porMes = Array(12).fill(0);
+  (d.cobrosData||[]).forEach(c => {
+    if (!c.fecha) return;
+    const f = new Date(c.fecha);
+    if (f.getFullYear() === _aniosCobros) porMes[f.getMonth()] += (+c.importe||0);
+  });
+  const mesItems = MESES.map((lbl,i)=>({lbl,val:Math.round(porMes[i])}));
+  const maxMes = Math.max(...mesItems.map(i=>i.val),1);
+
+  const aniosDisp = [...new Set((d.cobrosData||[]).map(c=>c.fecha?new Date(c.fecha).getFullYear():null).filter(Boolean))].sort((a,b)=>b-a);
+  const anioActual = new Date().getFullYear();
+  if (!aniosDisp.includes(anioActual)) aniosDisp.unshift(anioActual);
+  const anioOpts = aniosDisp.map(a=>`<option value="${a}" ${a===_aniosCobros?'selected':''}>${a}</option>`).join('');
+
+  const porFP = {};
+  (d.cobrosData||[]).forEach(c=>{ const k=c.forma_pago||'Sin especificar'; porFP[k]=(porFP[k]||0)+1; });
+  const fpItems = Object.entries(porFP).map(([lbl,val])=>({lbl,val})).sort((a,b)=>b.val-a.val);
+  const porTipo = {};
+  (d.cobrosData||[]).forEach(c=>{ const k=c.tipo||'Sin tipo'; porTipo[k]=(porTipo[k]||0)+1; });
+  const tipoItems = Object.entries(porTipo).map(([lbl,val])=>({lbl,val})).sort((a,b)=>b.val-a.val);
+
+  const sinPagar = d.alumnosSinPagarMes||[];
+
+  return `
+    <div class="stats-sec" style="border-left-color:#2563eb">
+      ${secHdr('icons/mensual.png','Resumen período')}
+      ${kpiRow([
+        {val:(d.totalCobrado||0).toFixed(0)+'€', lbl:'Total cobrado',  color:'verde'},
+        {val:d.numCobros||0,                     lbl:'Nº cobros',      color:'azul'},
+      ])}
+    </div>
+    <div class="stats-sec" style="border-left-color:#2563eb">
+      ${secHdr('icons/mensual.png','Cobrado por mes')}
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <div class="filter-label" style="margin:0">Año</div>
+        <div class="anio-wrap" style="display:inline-block">
+          <div class="anio-trigger" id="st-anio-trigger" onclick="stAnioToggle()" style="background:#f1f5f9;border:1.5px solid var(--borde);border-radius:9px;padding:5px 12px;font-size:12px;font-weight:900;color:var(--texto);cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-family:Nunito,sans-serif">
+            <span id="st-anio-lbl">${_aniosCobros}</span><span style="font-size:10px;color:var(--azul);font-weight:900">∨</span>
+          </div>
+          <div class="anio-drop" id="st-anio-drop" style="min-width:90px">
+            ${aniosDisp.map(a=>`<div class="anio-opt${a===_aniosCobros?' sel':''}" onclick="stAnioPick(${a})">${a}</div>`).join('')}
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:flex-end;gap:3px;height:80px;padding-bottom:4px">
+        ${mesItems.map(({lbl,val})=>{
+          const h=Math.round(val/maxMes*64);
+          return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
+            <div style="font-size:7px;font-weight:700;color:var(--sutil)">${val>0?val:''}</div>
+            <div style="width:100%;height:${h}px;background:#2563eb;border-radius:3px 3px 0 0;min-height:${val>0?2:0}px"></div>
+            <div style="font-size:7px;font-weight:700;color:var(--sutil)">${lbl}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+    ${fpItems.length ? `
+    <div class="stats-sec" style="border-left-color:#2563eb">
+      ${secHdr('icons/mensual.png','Por forma de pago')}
+      ${barras(fpItems,'#16a34a')}
+    </div>` : ''}
+    ${tipoItems.length ? `
+    <div class="stats-sec" style="border-left-color:#2563eb">
+      ${secHdr('icons/mensual.png','Por tipo')}
+      ${barras(tipoItems,'#f59e0b')}
+    </div>` : ''}
+    ${sinPagar.length ? `
+    <div class="stats-sec" style="border-left-color:#2563eb">
+      ${secHdr('icons/mensual.png',`Sin pago mensual en ${d.mesActual||''}`)}
+      <div style="font-size:12px;color:var(--sutil);font-weight:600;line-height:1.8">
+        ${sinPagar.map(a=>`<span style="display:inline-block;background:#f1f5f9;border-radius:7px;padding:2px 8px;margin:2px;font-weight:700;color:var(--texto)">${a.nombre||'—'}</span>`).join('')}
+      </div>
+    </div>` : ''}`;
+}
+
+function renderPistas() {
+  const d = _datos;
+  const porPista = {};
+  (d.bloquesData||[]).forEach(b=>{ const k=b.pista||'Sin pista'; porPista[k]=(porPista[k]||0)+1; });
+  const pistaItems = Object.entries(porPista).map(([lbl,val])=>({lbl,val})).sort((a,b)=>b.val-a.val);
+  const porTipo = {};
+  (d.bloquesData||[]).forEach(b=>{ const k=b.tipo||'Sin tipo'; porTipo[k]=(porTipo[k]||0)+1; });
+  const tipoItems = Object.entries(porTipo).map(([lbl,val])=>({lbl,val})).sort((a,b)=>b.val-a.val);
+  const porHora = {};
+  (d.bloquesData||[]).forEach(b=>{ if(b.hora_inicio){ const h=b.hora_inicio.slice(0,5); porHora[h]=(porHora[h]||0)+1; } });
+  const horaItems = Object.entries(porHora).map(([lbl,val])=>({lbl,val})).sort((a,b)=>a.lbl.localeCompare(b.lbl));
+
+  return `
+    <div class="stats-sec" style="border-left-color:#2563eb">
+      ${secHdr('icons/pistas.png','Totales')}
+      ${kpiRow([
+        {val:d.semanas||0, lbl:'Semanas registradas', color:'azul'},
+        {val:d.bloques||0, lbl:'Bloques totales',     color:'verde'},
+      ])}
+    </div>
+    ${pistaItems.length ? `
+    <div class="stats-sec" style="border-left-color:#2563eb">
+      ${secHdr('icons/pistas.png','Bloques por pista')}
+      ${barras(pistaItems,'#2563eb')}
+    </div>` : ''}
+    ${tipoItems.length ? `
+    <div class="stats-sec" style="border-left-color:#2563eb">
+      ${secHdr('icons/pistas.png','Por tipo de bloque')}
+      ${barras(tipoItems,'#f59e0b')}
+    </div>` : ''}
+    ${horaItems.length ? `
+    <div class="stats-sec" style="border-left-color:#2563eb">
+      ${secHdr('icons/pistas.png','Horas pico')}
+      ${barras(horaItems,'#7c3aed')}
+    </div>` : ''}`;
+}
+
+function renderStats() {
+  const renders = {general:renderGeneral,alumnos:renderAlumnos,grupos:renderGrupos,
+    ejercicios:renderEjercicios,clases:renderClases,torneos:renderTorneos,
+    cobros:renderCobros,pistas:renderPistas};
+  document.getElementById('stats-contenido').innerHTML = (renders[_seccion]||renderGeneral)();
+}
+
+// ── Carga Supabase ────────────────────────────
+async function cargar() {
+  showLoading('stats-contenido');
+  try {
+    // Filtro por Mes + Año
+    const hoy = new Date();
+    let desdeStr = null, hastaStr = null;
+    if (_anio && _mes !== null) {
+      desdeStr = `${_anio}-${String(_mes+1).padStart(2,'0')}-01`;
+      const fin = new Date(_anio, _mes+1, 0);
+      hastaStr = fin.toISOString().slice(0,10);
+    } else if (_anio) {
+      desdeStr = `${_anio}-01-01`;
+      hastaStr = `${_anio}-12-31`;
+    }
+
+    const [
+      alumnos, grupos, ejerciciosActivos, ejerciciosTodos,
+      clases, torneos, cobros, semanas,
+    ] = await Promise.all([
+      _sb.from('alumnos').select('id,nombre,nivel,created_at,grupo_id').eq('escuela_id',Store.escuelaId),
+      _sb.from('grupos').select('id,nombre,nivel,monitor,pista').eq('escuela_id',Store.escuelaId).order('nombre'),
+      _sb.from('ejercicios').select('id,nombre,usos,categoria,activo').eq('escuela_id',Store.escuelaId),
+      _sb.from('ejercicios').select('id').eq('escuela_id',Store.escuelaId),
+      _sb.from('clases').select('id,estado,fecha,grupo_id,tipo_clase').eq('escuela_id',Store.escuelaId),
+      _sb.from('torneos').select('id,nombre,tipo,estado').eq('escuela_id',Store.escuelaId),
+      _sb.from('cobros').select('id,importe,fecha,forma_pago,tipo,alumno_id').eq('escuela_id',Store.escuelaId),
+      _sb.from('semanas_pista').select('id').eq('escuela_id',Store.escuelaId),
+    ]);
+
+    // Cargar asistencia y ejercicios solo de las clases de esta escuela
+    const claseIds = (clases.data||[]).map(c=>c.id);
+    let claseAsistencia = {data:[]}, claseEjercicios = {data:[]};
+    let participantes = {data:[]}, partidos = {data:[]};
+    if (claseIds.length) {
+      [claseAsistencia, claseEjercicios] = await Promise.all([
+        _sb.from('clase_asistencia').select('clase_id,asistio').in('clase_id',claseIds),
+        _sb.from('clase_ejercicios').select('clase_id').eq('realizado',true).in('clase_id',claseIds),
+      ]);
+    }
+    const torneoIds2 = (torneos.data||[]).map(t=>t.id);
+    if (torneoIds2.length) {
+      [participantes, partidos] = await Promise.all([
+        _sb.from('participantes').select('torneo_id,nombre').in('torneo_id',torneoIds2),
+        _sb.from('partidos').select('torneo_id,resultado_a,resultado_b,pareja_a,pareja_b').not('resultado_a','is',null).in('torneo_id',torneoIds2),
+      ]);
+    }
+
+    const filtrar = (arr,campo) => (arr||[]).filter(x => (!desdeStr || x[campo] >= desdeStr) && (!hastaStr || x[campo] <= hastaStr));
+    const clasesF = filtrar(clases.data,'fecha');
+    const cobrosF = filtrar(cobros.data,'fecha');
+
+    // Grupos con alumnos (usando grupo_id directo — fix bug alumno_grupos)
+    const gruposConAlumnos = (grupos.data||[]).map(g=>({
+      ...g, num_alumnos:(alumnos.data||[]).filter(a=>a.grupo_id===g.id).length,
+    }));
+    const gruposMap = {};
+    (grupos.data||[]).forEach(g=>{ gruposMap[g.id]=g.nombre; });
+
+    // Asistencia media
+    const clasesRealizadasIds = new Set(clasesF.filter(c=>c.estado==='Realizada').map(c=>c.id));
+    const asistArr = (claseAsistencia.data||[]).filter(a=>clasesRealizadasIds.has(a.clase_id));
+    const asistenciaMedia = asistArr.length ? Math.round(asistArr.filter(a=>a.asistio).length/asistArr.length*100) : 0;
+
+    // Ejercicios por clase
+    const ejPorClase = clasesRealizadasIds.size
+      ? (claseEjercicios.data||[]).filter(e=>clasesRealizadasIds.has(e.clase_id)).length/clasesRealizadasIds.size : 0;
+
+    // Cobros pendientes (tipo = 'Pendiente')
+    const cobrosPend = (cobros.data||[]).filter(c=>c.tipo==='Pendiente');
+
+    // Clases programadas esta semana (para alerta en General)
+    const lun = new Date(hoy); lun.setDate(hoy.getDate()-((hoy.getDay()+6)%7));
+    const dom = new Date(lun); dom.setDate(lun.getDate()+6);
+    const sIni=lun.toISOString().slice(0,10), sFin=dom.toISOString().slice(0,10);
+    const clasesProgramadasSemana = (clases.data||[]).filter(c=>c.estado==='Programada'&&c.fecha>=sIni&&c.fecha<=sFin).length;
+
+    // Ranking jugadores — ratio victorias/partidos jugados
+    const torneoIds = new Set((torneos.data||[]).map(t=>t.id));
+    const statsJug = {}; // { nombre: { v:0, pj:0 } }
+    (partidos.data||[]).filter(p=>torneoIds.has(p.torneo_id)).forEach(p=>{
+      if(!p.pareja_a||!p.pareja_b) return;
+      const pA=+(p.resultado_a||0), pB=+(p.resultado_b||0);
+      if(pA===0&&pB===0) return;
+      [p.pareja_a,p.pareja_b].forEach((par,idx)=>{
+        const gana = idx===0?pA>pB:pB>pA;
+        par.split('/').map(n=>n.trim()).filter(Boolean).forEach(n=>{
+          if(!statsJug[n]) statsJug[n]={v:0,pj:0};
+          statsJug[n].pj++;
+          if(gana) statsJug[n].v++;
+        });
+      });
+    });
+    const rankingJugadores = Object.entries(statsJug)
+      .map(([nombre,s])=>({
+        nombre,
+        victorias: s.v,
+        partidos: s.pj,
+        ratio: s.pj>0 ? Math.round(s.v/s.pj*100) : 0,
+      }))
+      .sort((a,b)=>b.ratio-a.ratio||b.victorias-a.victorias)
+      .slice(0,8);
+
+    // Media jugadores/torneo (participantes de torneos de esta escuela)
+    const particsEscuela = (participantes.data||[]).filter(p=>torneoIds.has(p.torneo_id));
+    const mediajugadoresTorneo = (torneos.data||[]).length
+      ? Math.round(particsEscuela.length/(torneos.data||[]).length) : 0;
+
+    // Media cobro por alumno
+    const alumnosConCobro = new Set(cobrosF.map(c=>c.alumno_id).filter(Boolean));
+    const mediaAlumno = alumnosConCobro.size
+      ? cobrosF.reduce((s,c)=>s+(+c.importe||0),0)/alumnosConCobro.size : 0;
+
+    // Clases estado
+    const estMap = {};
+    clasesF.forEach(c=>{ estMap[c.estado]=(estMap[c.estado]||0)+1; });
+
+    // Clases por monitor (a través de grupos)
+    const clasesPorMonitor = {};
+    clasesF.forEach(c => {
+      const g = (grupos.data||[]).find(x=>x.id===c.grupo_id);
+      const mon = g?.monitor || 'Sin monitor';
+      clasesPorMonitor[mon] = (clasesPorMonitor[mon]||0)+1;
+    });
+
+    // Días más activos (0=Lun...6=Dom)
+    const DIAS_LABELS = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+    const clasesPorDia = Array(7).fill(0);
+    clasesF.forEach(c => {
+      if(!c.fecha) return;
+      const d = new Date(c.fecha+'T00:00:00');
+      const idx = d.getDay()===0?6:d.getDay()-1;
+      clasesPorDia[idx]++;
+    });
+    const diasActivos = DIAS_LABELS.map((lbl,i)=>({lbl,val:clasesPorDia[i]})).filter(x=>x.val>0).sort((a,b)=>b.val-a.val);
+
+    // Alumnos sin grupo
+    const alumnosSinGrupo = (alumnos.data||[]).filter(a=>!a.grupo_id);
+
+    // Evolución mensual de alumnos (altas por mes)
+    const evMensual = {};
+    (alumnos.data||[]).forEach(a => {
+      if(!a.created_at) return;
+      const f = new Date(a.created_at);
+      const k = `${f.getFullYear()}-${String(f.getMonth()+1).padStart(2,'0')}`;
+      evMensual[k]=(evMensual[k]||0)+1;
+    });
+    const evMensualItems = Object.entries(evMensual).sort((a,b)=>a[0].localeCompare(b[0])).slice(-12).map(([k,v])=>{
+      const [y,m]=k.split('-');
+      const MESES_CORTO=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+      return {lbl:`${MESES_CORTO[+m-1]} ${y.slice(2)}`,val:v};
+    });
+
+    // Cobros por alumno — quién no ha pagado este mes
+    const mesActual = new Date().toLocaleString('es',{month:'long'}).replace(/^\w/,c=>c.toUpperCase());
+    const anioActual = new Date().getFullYear();
+    const cobrosEsteMes = (cobros.data||[]).filter(c=>c.mes===mesActual&&c.fecha&&new Date(c.fecha).getFullYear()===anioActual&&c.tipo==='Mensual');
+    const alumnosConCobroMes = new Set(cobrosEsteMes.map(c=>c.alumno_id));
+    const alumnosSinPagarMes = (alumnos.data||[]).filter(a=>a.grupo_id&&!alumnosConCobroMes.has(a.id));
+
+    // Bloques pistas
+    const semanaIds = (semanas.data||[]).map(s=>s.id);
+    let bloquesData = [];
+    if (semanaIds.length) {
+      const {data:bl} = await _sb.from('bloques_pista').select('pista,tipo,hora_inicio').in('semana_id',semanaIds);
+      bloquesData = bl||[];
+    }
+
+    // Nivel alumnos
+    const alumnosPorNivel = {};
+    (alumnos.data||[]).forEach(a=>{ if(a.nivel) alumnosPorNivel[a.nivel]=(alumnosPorNivel[a.nivel]||0)+1; });
+
+    _datos = {
+      totalAlumnos:    (alumnos.data||[]).length,
+      alumnosNuevos:   (alumnos.data||[]).filter(a => (!desdeStr||a.created_at>=desdeStr) && (!hastaStr||a.created_at<=hastaStr+'T23:59:59')).length,
+      alumnosPorNivel,
+      totalGrupos:     (grupos.data||[]).length,
+      gruposConAlumnos, gruposMap,
+      totalEjercicio:  (ejerciciosActivos.data||[]).filter(e=>e.activo!==false).length,
+      ejerciciosTotal: (ejerciciosTodos.data||[]).length,
+      ejercicios:      (ejerciciosActivos.data||[]).filter(e=>e.activo!==false),
+      totalClases:     clasesF.length,
+      clasesPorEstado: estMap,
+      clasesData:      clasesF,
+      asistenciaMedia, ejerciciosPorClase:ejPorClase,
+      clasesRealizadas:estMap['Realizada']||0,
+      clasesProgramadasSemana,
+      totalTorneos:    (torneos.data||[]).length,
+      torneosEnCurso:  (torneos.data||[]).filter(t=>t.estado==='en_curso').length,
+      torneosFinalizados:(torneos.data||[]).filter(t=>t.estado==='finalizado').length,
+      torneosData:     torneos.data||[],
+      rankingJugadores, mediajugadoresTorneo,
+      totalCobrado:    cobrosF.reduce((s,c)=>s+(+c.importe||0),0),
+      totalPendiente:  cobrosPend.reduce((s,c)=>s+(+c.importe||0),0),
+      numCobros:       cobrosF.length,
+      numPendientes:   cobrosPend.length,
+      mediaAlumno,
+      cobrosData:      cobros.data||[],
+      clasesPorMonitor,
+      diasActivos,
+      alumnosSinGrupo,
+      evMensualItems,
+      alumnosSinPagarMes,
+      mesActual,
+      bloques:         bloquesData.length,
+      bloquesData,
+    };
+    renderStats();
+  } catch(e) {
+    showError('stats-contenido','Error al cargar estadísticas: ' + (e?.message || e?.toString() || JSON.stringify(e)));
+    console.error('Stats error completo:', e);
+  }
+}
+
+async function init() {
+  await initStore();
+  initFiltroFecha();
+  renderHeader({titulo:'Escuela de Pádel',subtitulo:'Estadísticas',icono:'icons/stats.png',botonDerecho:'menu'});
+  renderNav('stats');
+  await cargar();
+
+  // ── Inicializar selects custom ──
+  nselInit('sel-mes');
+  nselInit('sel-anio');
+  nselInit('sel-seccion');
+}
+function abrirInfo() {
+  openSheet('sh-info-pagina');
+}
+
+init();
+function stAnioToggle(){const d=document.getElementById('st-anio-drop');const t=document.getElementById('st-anio-trigger');if(!d)return;const open=d.classList.contains('open');d.classList.toggle('open',!open);t&&t.classList.toggle('open',!open);}
+function stAnioPick(v){_aniosCobros=v;const d=document.getElementById('st-anio-drop');const t=document.getElementById('st-anio-trigger');const l=document.getElementById('st-anio-lbl');if(d)d.classList.remove('open');if(t)t.classList.remove('open');renderStats();}
+document.addEventListener('click',e=>{if(!e.target.closest('.anio-wrap')){document.querySelectorAll('.anio-drop').forEach(d=>d.classList.remove('open'));document.querySelectorAll('.anio-trigger').forEach(t=>t.classList.remove('open'));}});
+</script>
+</body>
+</html>

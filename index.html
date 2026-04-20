@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="theme-color" content="#2563eb">
+  <title>Escuela de Pádel</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/inicio.png">
+  <style>
+    /* ── Próximas clases ── */
+    .pcl-card {
+      background: var(--card); border: 1px solid var(--borde);
+      border-radius: 11px; display: flex; align-items: center;
+      gap: 10px; padding: 10px 12px; margin-bottom: 6px;
+    }
+    .pcl-fecha { display: flex; flex-direction: column; align-items: center; min-width: 36px; }
+    .pcl-fecha-dia { font-size: 10px; font-weight: 900; color: var(--azul); text-transform: uppercase; }
+    .pcl-fecha-num { font-size: 20px; font-weight: 900; color: var(--texto); line-height: 1.1; }
+    .pcl-sep       { width: 1px; height: 34px; background: var(--borde); flex-shrink: 0; }
+    .pcl-info      { flex: 1; min-width: 0; }
+    .pcl-nombre    { font-size: 13px; font-weight: 800; color: var(--texto); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pcl-meta      { font-size: 11px; color: var(--sutil); font-weight: 600; margin-top: 2px; }
+    .pcl-pista     { font-size: 10px; font-weight: 800; color: var(--azul); background: #dbeafe; border-radius: 6px; padding: 3px 8px; flex-shrink: 0; }
+
+    /* ── Pendientes (neutral, sin colores de alerta) ── */
+    .alerta-card {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px; border-radius: 11px; margin-bottom: 6px;
+      background: var(--card); border: 1.5px solid var(--borde);
+    }
+    .alerta-card.warn   { background: var(--card); border-color: var(--borde); }
+    .alerta-card.info   { background: var(--card); border-color: var(--borde); }
+    .alerta-card.danger { background: var(--card); border-color: var(--borde); }
+    .alerta-ico   { font-size: 18px; flex-shrink: 0; }
+    .alerta-titulo{ font-size: 12px; font-weight: 900; color: var(--texto); }
+    .alerta-sub   { font-size: 11px; color: var(--sutil); font-weight: 600; margin-top: 1px; }
+
+    /* ── Bloques de sección con color ── */
+    .ini-sec {
+      border-radius: 16px;
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+    .ini-sec-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 14px 9px;
+    }
+    .ini-sec-title {
+      display: flex; align-items: center; gap: 7px;
+      font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: .5px;
+    }
+    .ini-sec-title img { width: 20px; height: 20px; object-fit: contain; mix-blend-mode: multiply; }
+    .ini-sec-link { font-size: 10px; font-weight: 800; text-decoration: none; }
+    .ini-sec-body { padding: 0 10px 10px; }
+
+    /* Colores por sección */
+    .ini-sec-clases   { background: #dbeafe; }
+    .ini-sec-clases   .ini-sec-title { color: #1d4ed8; }
+    .ini-sec-clases   .ini-sec-link  { color: #2563eb; }
+
+    .ini-sec-alertas  { background: #fef9c3; }
+    .ini-sec-alertas  .ini-sec-title { color: #92400e; }
+
+    .ini-sec-torneos  { background: #dcfce7; }
+    .ini-sec-torneos  .ini-sec-title { color: #166534; }
+    .ini-sec-torneos  .ini-sec-link  { color: #16a34a; }
+
+    .ini-sec-ranking  { background: #ede9fe; }
+    .ini-sec-ranking  .ini-sec-title { color: #5b21b6; }
+    .ini-sec-ranking  .ini-sec-link  { color: #7c3aed; }
+    .ini-sec-ranking  .top-pts       { color: #7c3aed; }
+
+    .ini-sec-ejercicios { background: #ffedd5; }
+    .ini-sec-ejercicios .ini-sec-title { color: #9a3412; }
+    .ini-sec-ejercicios .ini-sec-link  { color: #ea580c; }
+
+    /* Cards internas blancas */
+    .ini-sec .pcl-card,
+    .ini-sec .alerta-card,
+    .ini-sec .top-row {
+      background: #fff;
+      border-color: rgba(0,0,0,.06);
+      border-radius: 12px;
+      margin-bottom: 6px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.05);
+      border-left-width: 4px;
+    }
+    /* Borde izquierdo de color según sección */
+    .ini-sec-clases     .pcl-card,
+    .ini-sec-clases     .ini-row    { border-left-color: #2563eb; }
+    .ini-sec-alertas    .alerta-card{ border-left-color: #f59e0b; }
+    .ini-sec-torneos    .ini-row    { border-left-color: #16a34a; }
+    .ini-sec-ranking    .top-row    { border-left-color: #7c3aed; }
+    .ini-sec-ejercicios .ini-row    { border-left-color: #f59e0b; }
+    /* ini-row también necesita border-left-width */
+    .ini-sec .ini-row { border-left-width: 4px; }
+
+    /* ── Top jugadores ── */
+    .top-row {
+      display: flex; align-items: center; gap: 10px; padding: 9px 12px;
+      background: var(--card); border: 1px solid var(--borde); border-radius: 11px; margin-bottom: 6px;
+    }
+    .top-pos    { font-size: 14px; font-weight: 900; min-width: 24px; text-align: center; }
+    .top-nombre { flex: 1; font-size: 13px; font-weight: 800; color: var(--texto); }
+    .top-pts    { font-size: 14px; font-weight: 900; color: var(--azul); text-align: right; }
+    .top-sub    { font-size: 10px; color: var(--sutil); font-weight: 600; text-align: right; }
+
+    /* ── Logo upload ── */
+    .logo-upload-wrap {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 6px; margin-bottom: 14px; cursor: pointer;
+    }
+    .logo-upload-img  { width: 72px; height: 72px; border-radius: 16px; object-fit: contain; border: 2px solid var(--borde); background: #f8fafc; }
+    .logo-upload-hint { font-size: 11px; color: var(--sutil); font-weight: 600; }
+    #logo-file-input  { display: none; }
+
+    /* ── Menú usuario ── */
+    .menu-fila { display: flex; align-items: center; gap: 12px; padding: 13px 15px; cursor: pointer; border-radius: 12px; transition: background .15s; }
+    .menu-fila:hover { background: #f1f5f9; }
+    .menu-fila-ico { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+    .menu-fila-ico.azul { background: #dbeafe; }
+    .menu-fila-ico.rojo { background: #fee2e2; }
+    .menu-fila-titulo { font-size: 14px; font-weight: 800; color: var(--texto); }
+    .menu-fila-sub    { font-size: 11px; color: var(--sutil); font-weight: 600; margin-top: 1px; }
+    .menu-sep { height: 1px; background: var(--borde); margin: 4px 15px; }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <div id="header-container"></div>
+  <nav id="nav-container"></nav>
+
+  <main class="content" id="main">
+
+    <div class="sec">
+      <img src="icons/inicio.png" alt="Inicio">
+      <div class="sec-title">Inicio <button onclick="abrirInfo()" style="background:none;border:none;color:#2563eb;font-size:13px;font-weight:800;cursor:pointer;padding:0;font-family:Nunito,sans-serif">Info.</button></div></div>
+
+    <!-- 1. PRÓXIMAS CLASES -->
+    <div class="ini-sec ini-sec-clases">
+      <div class="ini-sec-header">
+        <div class="ini-sec-title"><img src="icons/pistas.png" alt="">Próximas clases</div>
+        <a class="ini-sec-link" href="pistas.html">Ver pistas →</a>
+      </div>
+      <div class="ini-sec-body">
+        <div id="lista-proximas"><div class="loading"><div class="spinner"></div></div></div>
+      </div>
+    </div>
+
+    <!-- 2. ALERTAS (se oculta si no hay) -->
+    <div class="ini-sec ini-sec-alertas" id="sec-alertas" style="display:none">
+      <div class="ini-sec-header">
+        <div class="ini-sec-title"><img src="icons/inicio.png" alt="">Pendientes</div>
+      </div>
+      <div class="ini-sec-body">
+        <div id="lista-alertas"></div>
+      </div>
+    </div>
+
+    <!-- 3. ÚLTIMOS TORNEOS -->
+    <div class="ini-sec ini-sec-torneos">
+      <div class="ini-sec-header">
+        <div class="ini-sec-title"><img src="icons/torneos.png" alt="">Últimos torneos</div>
+        <a class="ini-sec-link" href="torneos.html">Ver todos →</a>
+      </div>
+      <div class="ini-sec-body">
+        <div id="lista-torneos"><div class="loading"><div class="spinner"></div></div></div>
+      </div>
+    </div>
+
+    <!-- 4. TOP JUGADORES -->
+    <div class="ini-sec ini-sec-ranking">
+      <div class="ini-sec-header">
+        <div class="ini-sec-title"><img src="icons/stats.png" alt="">Top jugadores</div>
+        <a class="ini-sec-link" href="stats.html">Ver ranking →</a>
+      </div>
+      <div class="ini-sec-body">
+        <div id="lista-top"><div class="loading"><div class="spinner"></div></div></div>
+      </div>
+    </div>
+
+    <!-- 5. EJERCICIOS MÁS USADOS -->
+    <div class="ini-sec ini-sec-ejercicios">
+      <div class="ini-sec-header">
+        <div class="ini-sec-title"><img src="icons/ejercicios.png" alt="">Ejercicios más usados</div>
+        <a class="ini-sec-link" href="ejercicios.html">Ver todos →</a>
+      </div>
+      <div class="ini-sec-body">
+        <div id="lista-ejercicios"><div class="loading"><div class="spinner"></div></div></div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ── Panel menú usuario ── -->
+  <div class="cfg-overlay" id="menu-overlay" onclick="if(event.target===this)UI.cerrarMenu()">
+    <div class="cfg-sheet">
+      <div class="cfg-hdr">
+        <span class="cfg-titulo">Menú</span>
+        <button class="cfg-close" onclick="UI.cerrarMenu()">✕</button>
+      </div>
+      <div style="padding:10px 11px 0">
+        <div class="menu-fila" onclick="UI.abrirConfig()">
+          <div class="menu-fila-ico azul">⚙️</div>
+          <div>
+            <div class="menu-fila-titulo">Configurar escuela</div>
+            <div class="menu-fila-sub">Nombre y logo</div>
+          </div>
+          <span style="color:var(--sutil);font-size:16px;margin-left:auto">›</span>
+        </div>
+        <div class="menu-sep"></div>
+        <div class="menu-fila" onclick="logout()">
+          <div class="menu-fila-ico rojo">🚪</div>
+          <div>
+            <div class="menu-fila-titulo">Cerrar sesión</div>
+            <div class="menu-fila-sub">Salir de la cuenta actual</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Panel configurar escuela ── -->
+  <div class="cfg-overlay" id="config-overlay" onclick="if(event.target===this)UI.cerrarConfig()">
+    <div class="cfg-sheet">
+      <div class="cfg-hdr">
+        <span class="cfg-titulo">⚙️ Configurar escuela</span>
+        <button class="cfg-close" onclick="UI.cerrarConfig()">✕</button>
+      </div>
+      <div style="padding:14px 15px">
+        <div class="cfg-sec-lbl">Logo</div>
+        <div class="logo-upload-wrap" onclick="document.getElementById('logo-file-input').click()">
+          <img id="logo-preview" class="logo-upload-img" src="icons/inicio.png" alt="Logo">
+          <span class="logo-upload-hint">Toca para cambiar el logo</span>
+        </div>
+        <input type="file" id="logo-file-input" accept="image/*" onchange="onLogoChange(event)">
+        <div class="cfg-sec-lbl" style="margin-top:4px">Nombre de la escuela</div>
+        <input class="finp" id="cfg-nombre" type="text" placeholder="Ej: Club Pádel Norte" style="margin-bottom:14px">
+        <button class="cfg-listo" onclick="guardarConfig()">✓ Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirmación -->
+  <div class="confirm-overlay" id="confirm-overlay">
+    <div class="confirm-box">
+      <div class="confirm-titulo">¿Estás seguro?</div>
+      <div class="confirm-texto" id="confirm-texto"></div>
+      <div class="confirm-btns">
+        <button class="cbtn" onclick="document.getElementById('confirm-overlay').classList.remove('open')">Cancelar</button>
+        <button class="cbtn danger" id="confirm-ok">Eliminar</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+
+  <!-- Sheet info página -->
+  <div class="overlay" id="sh-info-pagina">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">Inicio</div>
+      <div style="font-size:14px;font-weight:600;color:var(--sub);line-height:1.65;padding-bottom:8px">Panel principal de tu escuela. Muestra las próximas clases programadas, los últimos torneos y el ranking de jugadores. Desde aquí también accedes a la configuración de la escuela y a generar cobros del mes.</div>
+      <div class="sheet-btns">
+        <button class="sbtn prim" style="flex:1" onclick="closeSheet('sh-info-pagina')">Entendido</button>
+      </div>
+    </div>
+  </div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/store.js"></script>
+<script src="js/ui.js"></script>
+<script>
+
+const DIAS  = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+const MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+const DIAS_LARGO = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+
+const ICONO_TORNEO = {
+  'Americano':'icons/americano.png','Escalera':'icons/escalera.png',
+  'Mexicano':'icons/mexicano.png','Round Robin':'icons/robin.png',
+};
+const ICONO_CAT = {
+  'Calentamiento':'icons/calentamiento.png','Carritos':'icons/carritos.png',
+  'Situaciones':'icons/situaciones.png','Partiditos':'icons/partiditos.png','Genérico':'icons/generico.png',
+};
+
+let _logoBase64 = null;
+
+// ── 1. PRÓXIMAS CLASES ─────────────────────────
+function renderProximas(clases, grupos) {
+  const el = document.getElementById('lista-proximas');
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const grupoMap = {};
+  grupos.forEach(g => grupoMap[g.id] = g.nombre);
+
+  const DIAS  = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  const MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+
+  const proximas = (clases||[])
+    .filter(c => c.estado === 'Programada' && new Date(c.fecha+'T00:00:00') >= hoy)
+    .sort((a,b) => {
+      const df = new Date(a.fecha) - new Date(b.fecha);
+      return df !== 0 ? df : (a.hora||'').localeCompare(b.hora||'');
+    })
+    .slice(0, 6);
+
+  if (!proximas.length) {
+    el.innerHTML = '<div class="ini-empty">Sin clases próximas programadas</div>'; return;
+  }
+
+  el.innerHTML = proximas.map(c => {
+    const fecha  = new Date(c.fecha+'T00:00:00');
+    const diaNom = DIAS[fecha.getDay()];
+    const diaNum = fecha.getDate();
+    const mesNom = MESES[fecha.getMonth()];
+    const hora   = c.hora ? c.hora.slice(0,5) : '';
+    const horaFin = (c.hora && c.duracion) ? _calcHoraFinIdx(c.hora, c.duracion) : '';
+    const nombre = (c.grupo_id && grupoMap[c.grupo_id]) || c.tipo_clase || 'Clase';
+    return `
+      <div class="pcl-card">
+        <div class="pcl-fecha">
+          <div class="pcl-fecha-dia">${diaNom}</div>
+          <div class="pcl-fecha-num">${diaNum}</div>
+          <div style="font-size:9px;color:var(--sutil);font-weight:700">${mesNom}</div>
+        </div>
+        <div class="pcl-sep"></div>
+        <div class="pcl-info">
+          <div class="pcl-nombre">${nombre}</div>
+          <div class="pcl-meta">${hora}${horaFin?'–'+horaFin:''}</div>
+        </div>
+        ${c.pista?`<div class="pcl-pista">${c.pista}</div>`:''}
+      </div>`;
+  }).join('');
+}
+
+function _calcHoraFinIdx(h, durMin) {
+  const [hh,mm] = h.split(':').map(Number);
+  const t = hh*60+mm+durMin;
+  return String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0');
+}
+
+// ── 2. ALERTAS ─────────────────────────────────
+function renderAlertas({ clases, torneos, alumnos }) {
+  const alertas = [];
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const en7 = new Date(hoy); en7.setDate(hoy.getDate()+7);
+
+  // Clases programadas sin pista en los próximos 7 días
+  const sinPista = (clases||[]).filter(c => {
+    const f = new Date(c.fecha+'T00:00:00');
+    return c.estado==='Programada' && f>=hoy && f<=en7;
+  });
+  if (sinPista.length)
+    alertas.push({ tipo:'info', ico:'<img src="icons/clases.png" style="width:22px;height:22px;object-fit:contain;">', titulo:`${sinPista.length} clase${sinPista.length>1?'s':''} programada${sinPista.length>1?'s':''} pendiente${sinPista.length>1?'s':''}`, sub:'En el módulo Clases, pendiente de marcar como realizada', href:'clases.html' });
+
+  // Torneos en curso
+  const activos = (torneos||[]).filter(t => t.estado==='activo'||t.estado==='en_curso');
+  if (activos.length)
+    alertas.push({ tipo:'info', ico:'<img src="icons/torneos.png" style="width:22px;height:22px;object-fit:contain;">', titulo:`${activos.length} torneo${activos.length>1?'s':''} en curso`, sub:'Pendiente de resultados', href:'torneos.html' });
+
+  // (Alumnos sin grupo eliminado — puede ser intencionado, ej: particulares)
+
+  const sec = document.getElementById('sec-alertas');
+  const el  = document.getElementById('lista-alertas');
+  if (!alertas.length) { sec.style.display='none'; return; }
+  sec.style.display = 'block';
+  el.innerHTML = alertas.map(a => `
+    <a href="${a.href}" class="alerta-card ${a.tipo}" style="text-decoration:none">
+      <div class="alerta-ico">${a.ico}</div>
+      <div style="flex:1">
+        <div class="alerta-titulo">${a.titulo}</div>
+        <div class="alerta-sub">${a.sub}</div>
+      </div>
+      <span style="color:var(--sutil);font-size:14px">›</span>
+    </a>`).join('');
+}
+
+// ── 3. ÚLTIMOS TORNEOS ─────────────────────────
+function renderTorneos(torneos) {
+  const el = document.getElementById('lista-torneos');
+  if (!torneos.length) { el.innerHTML='<div class="ini-empty">Sin torneos aún</div>'; return; }
+  el.innerHTML = torneos.map(t => {
+    const chip = (t.estado==='activo'||t.estado==='en_curso')
+      ? '<span class="chip cam">En curso</span>'
+      : '<span class="chip cgr">Finalizado</span>';
+    return `
+      <a class="ini-row" href="torneos.html?id=${t.id}">
+        <div class="ini-ico"><img src="${ICONO_TORNEO[t.tipo]||'icons/torneos.png'}" alt=""></div>
+        <div class="ini-info">
+          <div class="ini-name">${t.nombre}</div>
+          <div class="ini-sub">${formatFecha(t.fecha)} · ${t.num_jugadores||'?'} jugadores</div>
+        </div>
+        ${chip}
+      </a>`;
+  }).join('');
+}
+
+// ── 4. TOP JUGADORES ───────────────────────────
+function renderTop(partidos) {
+  const el = document.getElementById('lista-top');
+  const jugados = (partidos||[]).filter(p => p.resultado_a != null);
+  if (!jugados.length) {
+    el.innerHTML='<div class="ini-empty">Sin partidos validados aún<br><span style="font-size:11px">Los resultados de torneos aparecerán aquí</span></div>'; return;
+  }
+
+  // Desglosar parejas en jugadores individuales (split por " / ")
+  const stats = {};
+  function addJugador(nombre, ganó, pts) {
+    if (!nombre) return;
+    // Cada pareja puede tener formato "Jugador1 / Jugador2"
+    nombre.split('/').map(n => n.trim()).filter(Boolean).forEach(jug => {
+      if (!stats[jug]) stats[jug]={pj:0,pg:0,pts:0};
+      stats[jug].pj++;
+      if (ganó) stats[jug].pg++;
+      stats[jug].pts += pts;
+    });
+  }
+  jugados.forEach(p => {
+    const ra=+p.resultado_a, rb=+p.resultado_b;
+    if (ra>rb) {
+      addJugador(p.pareja_a, true, 3); addJugador(p.pareja_b, false, 1);
+    } else if (rb>ra) {
+      addJugador(p.pareja_b, true, 3); addJugador(p.pareja_a, false, 1);
+    } else {
+      addJugador(p.pareja_a, false, 1); addJugador(p.pareja_b, false, 1);
+    }
+  });
+
+  const ranking = Object.entries(stats)
+    .map(([nombre,s]) => ({ nombre, ...s, pct:Math.round(s.pg/s.pj*100) }))
+    .sort((a,b) => b.pts-a.pts || b.pct-a.pct)
+    .slice(0,5);
+
+  const medallas = ['🥇','🥈','🥉'];
+  el.innerHTML = ranking.map((r,i) => `
+    <div class="top-row">
+      <div class="top-pos">${medallas[i]||(i+1)}</div>
+      <div class="top-nombre">${r.nombre}</div>
+      <div>
+        <div class="top-pts">${r.pts} pts</div>
+        <div class="top-sub">${r.pg}V · ${r.pj}PJ · ${r.pct}%</div>
+      </div>
+    </div>`).join('');
+}
+
+// ── 5. EJERCICIOS ──────────────────────────────
+function renderEjercicios(ejercicios) {
+  const el = document.getElementById('lista-ejercicios');
+  if (!ejercicios.length) { el.innerHTML='<div class="ini-empty">Sin uso registrado aún</div>'; return; }
+  el.innerHTML = ejercicios.map(e => `
+    <div class="ini-row">
+      <div class="ini-ico"><img src="${ICONO_CAT[e.categoria]||'icons/ejercicios.png'}" alt=""></div>
+      <div class="ini-info">
+        <div class="ini-name">${e.nombre}</div>
+        <div class="ini-sub">${e.categoria||''} · ${e.usos||0} usos</div>
+      </div>
+    </div>`).join('');
+}
+
+// ── LOGO ───────────────────────────────────────
+function onLogoChange(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => { _logoBase64=ev.target.result; document.getElementById('logo-preview').src=_logoBase64; };
+  reader.readAsDataURL(file);
+}
+
+async function guardarConfig() {
+  const nombre = document.getElementById('cfg-nombre').value.trim();
+  if (!nombre) { toast('Escribe el nombre','err'); return; }
+  try {
+    const { error } = await _sb.from('escuelas').update({ nombre }).eq('id', Store.escuelaId);
+    if (error) throw error;
+    if (_logoBase64) localStorage.setItem('escuela_logo_'+Store.escuelaId, _logoBase64);
+    localStorage.setItem('escuela_nombre_'+Store.escuelaId, nombre);
+    actualizarHeader(nombre);
+    toast('✓ Guardado');
+    document.getElementById('config-overlay').classList.remove('open');
+    document.getElementById('menu-overlay').classList.remove('open');
+  } catch(err) { console.error(err); toast('Error al guardar','err'); }
+}
+
+function actualizarHeader(nombre) {
+  const logo = Store.escuelaId
+    ? (localStorage.getItem('escuela_logo_'+Store.escuelaId)||'icons/inicio.png')
+    : 'icons/inicio.png';
+  renderHeader({ titulo:nombre||'Escuela de Pádel', subtitulo:'Panel de gestión', icono:logo, botonDerecho:'menu' });
+  renderNav('inicio');
+}
+
+// ── UI NAMESPACE ───────────────────────────────
+// Menu handled by ui.js dropdown
+UI.cerrarMenu  = () => document.getElementById('menu-overlay').classList.remove('open');
+UI.abrirConfig = () => {
+  UI.cerrarMenu();
+  document.getElementById('cfg-nombre').value = document.querySelector('.htitle')?.textContent||'';
+  const logo = Store.escuelaId?(localStorage.getItem('escuela_logo_'+Store.escuelaId)||'icons/inicio.png'):'icons/inicio.png';
+  document.getElementById('logo-preview').src = logo;
+  _logoBase64 = null;
+  document.getElementById('config-overlay').classList.add('open');
+};
+UI.cerrarConfig = () => document.getElementById('config-overlay').classList.remove('open');
+
+// ── INIT ───────────────────────────────────────
+async function init() {
+  renderHeader({ titulo:'Escuela de Pádel', subtitulo:'Panel de gestión', icono:'icons/inicio.png', botonDerecho:'menu' });
+  renderNav('inicio');
+
+  try {
+    await initStore();
+
+    // Obtener IDs de todos los torneos (Robin incluido, se desglosa individualmente)
+    const { data: todosLosTorneos } = await _sb.from('torneos').select('id,tipo').eq('escuela_id', Store.escuelaId);
+    const ids = (todosLosTorneos||[]).map(t=>t.id);
+
+    const [escuelaRes, torneosRes, partidosRes, alumnosRes, ejerciciosRes, clasesRes, gruposRes] = await Promise.all([
+      _sb.from('escuelas').select('nombre').eq('id', Store.escuelaId).single(),
+      _sb.from('torneos').select('*').eq('escuela_id', Store.escuelaId).order('fecha',{ascending:false}).limit(3),
+      ids.length ? _sb.from('partidos').select('pareja_a,pareja_b,resultado_a,resultado_b').in('torneo_id', ids) : { data:[] },
+      _sb.from('alumnos').select('id').eq('escuela_id', Store.escuelaId),
+      _sb.from('ejercicios').select('id,nombre,categoria,usos').eq('escuela_id', Store.escuelaId).order('usos',{ascending:false}).limit(5),
+      _sb.from('clases').select('id,fecha,estado,hora,duracion,grupo_id,tipo_clase,pista').eq('escuela_id', Store.escuelaId),
+      _sb.from('grupos').select('id,nombre').eq('escuela_id', Store.escuelaId),
+    ]);
+
+    if (escuelaRes.data?.nombre) {
+      localStorage.setItem('escuela_nombre_'+Store.escuelaId, escuelaRes.data.nombre);
+      actualizarHeader(escuelaRes.data.nombre);
+    }
+
+    renderProximas(clasesRes.data||[], gruposRes.data||[]);
+    renderAlertas({ clases:clasesRes.data||[], torneos:torneosRes.data||[], alumnos:alumnosRes.data||[] });
+    renderTorneos(torneosRes.data||[]);
+    renderTop(partidosRes.data||[]);
+    renderEjercicios(ejerciciosRes.data||[]);
+
+  } catch(err) {
+    console.error(err);
+    ['lista-proximas','lista-torneos','lista-top','lista-ejercicios'].forEach(id => showError(id,'Error al cargar'));
+  }
+}
+
+function abrirInfo() {
+  openSheet('sh-info-pagina');
+}
+
+init();
+</script>
+</body>
+</html>
