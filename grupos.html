@@ -349,7 +349,8 @@ let _grupos       = [];
 let _filtroNivel  = '';
 let _alumnosGrupo = {};
 let _cfgPistas    = [];
-let _cfgMonitores = [];
+let _cfgMonitores = [];  // lista de texto (compatibilidad legacy)
+let _monitoresDB  = [];  // monitores reales de la tabla monitores
 let _cfgNiveles   = ['Principiante', 'Intermedio', 'Avanzado'];
 
 // ── Hora picker custom ─────────────────────────
@@ -471,11 +472,15 @@ function renderGrupoSelectores(nivelAct, pistaAct, monitorAct) {
     (val, lista) => { _cfgPistas = lista.filter(v=>v!=='— Sin pista —'); saveLista('pistas', _cfgPistas); actualizarFiltroPista(); },
     '+ Añadir pista…');
 
-  cselRender('gr-monitor-csel', ['— Sin monitor —', ..._cfgMonitores], monitorAct || '— Sin monitor —',
-    '— Sin monitor —', null,
-    (val, lista) => { _cfgMonitores = lista.filter(v=>v!=='— Sin monitor —'); saveLista('monitores', _cfgMonitores); actualizarFiltroMonitor(); },
-    (val, lista) => { _cfgMonitores = lista.filter(v=>v!=='— Sin monitor —'); saveLista('monitores', _cfgMonitores); actualizarFiltroMonitor(); },
-    '+ Añadir monitor…');
+  // Monitor: usa nombres de la tabla monitores real; + redirige a monitores.html
+  const nombresMonitores = _monitoresDB.map(m => m.nombre);
+  cselRender('gr-monitor-csel',
+    ['— Sin monitor —', ...nombresMonitores],
+    monitorAct || '— Sin monitor —',
+    '— Sin monitor —',
+    null, null,
+    () => { window.location.href = 'monitores.html'; },
+    '+ Nuevo monitor…');
 }
 
 function actualizarFiltroNivel() {
@@ -496,7 +501,7 @@ function actualizarFiltroMonitor() {
   const fm = document.getElementById('filtro-monitor');
   if (!fm) return;
   const c = fm.value;
-  fm.innerHTML = '<option value="">Todos</option>' + _cfgMonitores.map(v=>`<option value="${v}">${v}</option>`).join('');
+  fm.innerHTML = '<option value="">Todos</option>' + _monitoresDB.map(m=>`<option value="${m.nombre}">${m.nombre}</option>`).join('');
   if (c) fm.value = c;
 }
 
@@ -647,10 +652,18 @@ function abrirEditar(g) {
     document.getElementById('gr-duracion').value = String(g.duracion || 60);
   }
   nselSync('gr-duracion');
+  // Resolver nombre monitor: primero por monitor_id, luego por texto legacy
+  let monitorNombre = '— Sin monitor —';
+  if (g.monitor_id) {
+    const m = _monitoresDB.find(x => x.id === g.monitor_id);
+    if (m) monitorNombre = m.nombre;
+  } else if (g.monitor) {
+    monitorNombre = g.monitor;
+  }
   renderGrupoSelectores(
-    g.nivel   || _cfgNiveles[0] || '',
-    g.pista   || '— Sin pista —',
-    g.monitor || '— Sin monitor —'
+    g.nivel || _cfgNiveles[0] || '',
+    g.pista || '— Sin pista —',
+    monitorNombre
   );
   openSheet('sh-grupo');
 }
@@ -675,6 +688,7 @@ async function guardar() {
     duracion:         parseInt(document.getElementById('gr-duracion').value) || 60,
     pista:            (() => { const v = cselGetValue('gr-pista-csel'); return v === '— Sin pista —' ? '' : v; })(),
     monitor:          (() => { const v = cselGetValue('gr-monitor-csel'); return v === '— Sin monitor —' ? '' : v; })(),
+    monitor_id:       (() => { const v = cselGetValue('gr-monitor-csel'); if (!v || v === '— Sin monitor —') return null; return _monitoresDB.find(m=>m.nombre===v)?.id || null; })(),
     importe_mensual:  parseFloat(document.getElementById('gr-importe').value) || 0,
     max_alumnos:      parseInt(document.getElementById('gr-max-alumnos').value)  || 0,
   };
@@ -966,15 +980,19 @@ async function init() {
 
   // Cargar config y grupos en paralelo
   const [cfg] = await Promise.all([
-    getConfigMultiple(['pistas','monitores','niveles']),
+    getConfigMultiple(['pistas','niveles']),
     cargar(),
   ]);
-  _cfgPistas    = cfg.pistas    || [];
-  _cfgMonitores = cfg.monitores || [];
+  _cfgPistas = cfg.pistas || [];
   if (cfg.niveles && cfg.niveles.length) _cfgNiveles = cfg.niveles;
-  chipRegistrarLista('pistas',    _cfgPistas);
-  chipRegistrarLista('monitores', _cfgMonitores);
-  chipRegistrarLista('niveles',   _cfgNiveles);
+  chipRegistrarLista('pistas',  _cfgPistas);
+  chipRegistrarLista('niveles', _cfgNiveles);
+
+  // Cargar monitores reales de la tabla monitores
+  try {
+    _monitoresDB = await getMonitores(true); // solo activos
+    chipRegistrarLista('monitores', _monitoresDB.map(m=>m.nombre));
+  } catch(e) { _monitoresDB = []; }
   fillDropdowns();
 
   // ── Inicializar selects custom ──
