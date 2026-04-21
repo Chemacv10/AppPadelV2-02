@@ -120,19 +120,26 @@ async function getGrupos(filtros = {}) {
 }
 
 async function saveGrupo(grupo) {
+  // Campos válidos de la tabla grupos — filtra campos desconocidos y undefined
+  const CAMPOS_GRUPOS = ['id','escuela_id','nombre','nivel','dias','hora_inicio','hora_fin',
+                         'duracion','pista','monitor','monitor_id','importe_mensual','max_alumnos'];
+  const limpiar = obj => {
+    const r = {};
+    CAMPOS_GRUPOS.forEach(k => { if (k in obj && obj[k] !== undefined) r[k] = obj[k]; });
+    return r;
+  };
   if (grupo.id) {
+    const payload = limpiar({ ...grupo, escuela_id: Store.escuelaId });
     const { data, error } = await _sb
-      .from('grupos')
-      .update({ ...grupo, escuela_id: Store.escuelaId })
-      .eq('id', grupo.id)
-      .select().single();
+      .from('grupos').update(payload)
+      .eq('id', grupo.id).select().single();
     if (error) throw error;
     return data;
   } else {
     const { id: _, ...sinId } = grupo;
+    const payload = limpiar({ ...sinId, escuela_id: Store.escuelaId });
     const { data, error } = await _sb
-      .from('grupos')
-      .insert({ ...sinId, escuela_id: Store.escuelaId })
+      .from('grupos').insert(payload)
       .select().single();
     if (error) throw error;
     return data;
