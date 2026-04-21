@@ -251,6 +251,10 @@
         <div class="fgrp">
           <div class="flbl">Monitor</div>
           <div class="csel-wrap" id="gr-monitor-csel"></div>
+          <button type="button" onclick="window.location.href='monitores.html'"
+            style="margin-top:5px;background:none;border:none;color:#2563eb;font-size:12px;font-weight:800;cursor:pointer;padding:2px 0;font-family:inherit;text-align:left">
+            + Nuevo monitor →
+          </button>
         </div>
       </div>
 
@@ -478,9 +482,7 @@ function renderGrupoSelectores(nivelAct, pistaAct, monitorAct) {
     ['— Sin monitor —', ...nombresMonitores],
     monitorAct || '— Sin monitor —',
     '— Sin monitor —',
-    null, null,
-    () => { window.location.href = 'monitores.html'; },
-    '+ Nuevo monitor…');
+    null, null, null, null);
 }
 
 function actualizarFiltroNivel() {
@@ -688,7 +690,7 @@ async function guardar() {
     duracion:         parseInt(document.getElementById('gr-duracion').value) || 60,
     pista:            (() => { const v = cselGetValue('gr-pista-csel'); return v === '— Sin pista —' ? '' : v; })(),
     monitor:          (() => { const v = cselGetValue('gr-monitor-csel'); return v === '— Sin monitor —' ? '' : v; })(),
-    monitor_id:       (() => { const v = cselGetValue('gr-monitor-csel'); if (!v || v === '— Sin monitor —') return null; return _monitoresDB.find(m=>m.nombre===v)?.id || null; })(),
+    monitor_id:       (() => { const v = cselGetValue('gr-monitor-csel'); if (!v || v === '— Sin monitor —') return undefined; return _monitoresDB.find(m=>m.nombre===v)?.id || undefined; })(),
     importe_mensual:  parseFloat(document.getElementById('gr-importe').value) || 0,
     max_alumnos:      parseInt(document.getElementById('gr-max-alumnos').value)  || 0,
   };
@@ -697,7 +699,7 @@ async function guardar() {
     closeSheet('sh-grupo');
     toast('Grupo guardado', 'ok');
     await cargar();
-  } catch(e) { toast('Error al guardar', 'err'); console.error(e); }
+  } catch(e) { toast('Error: ' + (e.message || JSON.stringify(e)), 'err'); console.error(e); }
 }
 
 // ── Eliminar ───────────────────────────────────
@@ -767,7 +769,7 @@ async function guardarConfig() {
     fillDropdowns();
     closeSheet('sh-config');
     toast('✓ Configuración guardada', 'ok');
-  } catch(e) { toast('Error al guardar', 'err'); console.error(e); }
+  } catch(e) { toast('Error: ' + (e.message || JSON.stringify(e)), 'err'); console.error(e); }
 }
 
 // ── Cargar ─────────────────────────────────────
