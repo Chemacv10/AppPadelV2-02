@@ -814,7 +814,6 @@ async function _gcConfirmar() {
 function cselRender(containerId, opciones, seleccionada, noBorrar, onChange, onDelete, onAdd, placeholder) {
   const wrap = document.getElementById(containerId);
   if (!wrap) return;
-  const inpId = containerId + '-inp';
   wrap.innerHTML = `
     <div class="csel-trigger" onclick="cselToggle('${containerId}')">
       <div class="csel-trigger-label" id="${containerId}-tlabel">—</div>
@@ -822,11 +821,7 @@ function cselRender(containerId, opciones, seleccionada, noBorrar, onChange, onD
     </div>
     <div class="csel-dropdown" id="${containerId}-drop" style="display:none">
       <div id="${containerId}-lista"></div>
-      ${onAdd ? `<div class="csel-add">
-        <input class="csel-add-inp" id="${inpId}" placeholder="${placeholder || '+ Añadir…'}"
-          onkeydown="if(event.key==='Enter'){event.preventDefault();cselAdd('${containerId}');}">
-        <button class="csel-add-btn" onclick="cselAdd('${containerId}')">+</button>
-      </div>` : ''}
+      <div id="${containerId}-add-zone"></div>
     </div>`;
   wrap._cselState = { opciones: [...opciones], seleccionada, noBorrar, onChange, onDelete, onAdd, placeholder, open: false };
   cselRefresh(containerId);
@@ -835,15 +830,64 @@ function cselRender(containerId, opciones, seleccionada, noBorrar, onChange, onD
 function cselToggle(containerId) {
   const wrap = document.getElementById(containerId);
   if (!wrap?._cselState) return;
-  wrap._cselState.open = !wrap._cselState.open;
-  document.getElementById(containerId + '-drop').style.display = wrap._cselState.open ? 'block' : 'none';
-  document.getElementById(containerId + '-arrow').style.transform = wrap._cselState.open ? 'rotate(180deg)' : '';
+  const opening = !wrap._cselState.open;
+
+  // Cerrar todos los csel abiertos
+  document.querySelectorAll('.csel-wrap').forEach(w => {
+    if (w !== wrap && w._cselState?.open) {
+      w._cselState.open = false;
+      const d = w.querySelector('.csel-dropdown');
+      const a = w.querySelector('.csel-trigger-arrow');
+      if (d) d.style.display = 'none';
+      if (a) a.style.transform = '';
+    }
+  });
+  // Cerrar también nsel abiertos
+  document.querySelectorAll('.nsel-drop').forEach(d => {
+    if (d.style.display !== 'none') {
+      d.style.display = 'none';
+      const id = d.id.replace('-nsel-drop','');
+      const arr = document.getElementById(id + '-nsel-arrow');
+      if (arr) arr.style.transform = '';
+    }
+  });
+
+  wrap._cselState.open = opening;
+  const drop  = document.getElementById(containerId + '-drop');
+  const arrow = document.getElementById(containerId + '-arrow');
+
+  if (opening && drop) {
+    // Posicionar fixed igual que nsel
+    const trigger = wrap.querySelector('.csel-trigger');
+    const rect = trigger ? trigger.getBoundingClientRect() : wrap.getBoundingClientRect();
+    const margin = 8;
+    const maxW = window.innerWidth - margin * 2;
+    const spaceBelow = window.innerHeight - rect.bottom - margin;
+    const spaceAbove = rect.top - margin;
+
+    drop.style.display = 'block';
+    drop.style.left  = margin + 'px';
+    drop.style.width = maxW + 'px';
+
+    if (spaceBelow >= 150 || spaceBelow >= spaceAbove) {
+      drop.style.top    = (rect.bottom + 4) + 'px';
+      drop.style.bottom = 'auto';
+      drop.style.maxHeight = Math.max(spaceBelow, 120) + 'px';
+    } else {
+      drop.style.bottom = (window.innerHeight - rect.top + 4) + 'px';
+      drop.style.top    = 'auto';
+      drop.style.maxHeight = Math.max(spaceAbove, 120) + 'px';
+    }
+  } else if (drop) {
+    drop.style.display = 'none';
+  }
+  if (arrow) arrow.style.transform = opening ? 'rotate(180deg)' : '';
 }
 
 function cselRefresh(containerId) {
   const wrap = document.getElementById(containerId);
   if (!wrap?._cselState) return;
-  const { opciones, seleccionada, noBorrar, onDelete } = wrap._cselState;
+  const { opciones, seleccionada, noBorrar, onDelete, onAdd, placeholder } = wrap._cselState;
   const tlabel = document.getElementById(containerId + '-tlabel');
   if (tlabel) tlabel.textContent = seleccionada || '—';
   const lista = document.getElementById(containerId + '-lista');
@@ -857,6 +901,19 @@ function cselRefresh(containerId) {
       ${puedeEliminar ? `<button class="csel-del" onclick="event.stopPropagation();cselDelete('${containerId}','${op.replace(/'/g, "\'")}')">✕</button>` : ''}
     </div>`;
   }).join('');
+
+  // Si hay onAdd, renderizar el footer de añadir (input + botón)
+  const addZone = document.getElementById(containerId + '-add-zone');
+  if (!addZone) return;
+  if (onAdd) {
+    addZone.innerHTML = `<div class="csel-add">
+      <input class="csel-add-inp" id="${containerId}-inp" placeholder="${placeholder || '+ Añadir…'}"
+        onkeydown="if(event.key==='Enter'){event.preventDefault();cselAdd('${containerId}');}">
+      <button class="csel-add-btn" onclick="cselAdd('${containerId}')">+</button>
+    </div>`;
+  } else {
+    addZone.innerHTML = '';
+  }
 }
 
 function cselSelect(containerId, val) {
