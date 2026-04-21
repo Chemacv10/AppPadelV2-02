@@ -206,7 +206,7 @@
         </div>
         <div class="fgrp">
           <div class="flbl">Duración</div>
-          <div class="fsel-wrap" style="min-height:46px"><select class="fsel" id="gr-duracion">
+          <div class="fsel-wrap" style="height:46px;display:flex;align-items:center"><select class="fsel" id="gr-duracion" style="height:46px">
             <option value="30">30 min</option>
             <option value="35">35 min</option>
             <option value="40">40 min</option>
@@ -251,10 +251,6 @@
         <div class="fgrp">
           <div class="flbl">Monitor</div>
           <div class="csel-wrap" id="gr-monitor-csel"></div>
-          <button type="button" onclick="window.location.href='monitores.html'"
-            style="margin-top:5px;background:none;border:none;color:#2563eb;font-size:12px;font-weight:800;cursor:pointer;padding:2px 0;font-family:inherit;text-align:left">
-            + Nuevo monitor →
-          </button>
         </div>
       </div>
 
@@ -482,7 +478,18 @@ function renderGrupoSelectores(nivelAct, pistaAct, monitorAct) {
     ['— Sin monitor —', ...nombresMonitores],
     monitorAct || '— Sin monitor —',
     '— Sin monitor —',
-    null, null, null, null);
+    null, null,
+    () => { window.location.href = 'monitores.html'; },
+    '→ Nuevo monitor');
+  // Sobreescribir add-zone para mostrar link en vez de input
+  setTimeout(() => {
+    const az = document.getElementById('gr-monitor-csel-add-zone');
+    if (az) az.innerHTML = `<div style="padding:10px 12px;border-top:1px solid #dbeafe">
+      <button onclick="window.location.href='monitores.html'"
+        style="width:100%;background:none;border:none;color:#2563eb;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;text-align:left;padding:2px 0">
+        + Nuevo monitor →
+      </button></div>`;
+  }, 0);
 }
 
 function actualizarFiltroNivel() {
