@@ -405,8 +405,9 @@ nav, .nav {
 /* ── Formularios ─────────────────────────────── */
 .fgrp  { display: flex; flex-direction: column; gap: 3px; margin-bottom: 10px; }
 .flbl  { font-size: 10px; font-weight: 900; color: var(--azul); text-transform: uppercase; letter-spacing: .4px; }
-.frow  { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.frow3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.frow  { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; min-width: 0; }
+.frow3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; min-width: 0; }
+.frow > *, .frow3 > * { min-width: 0; overflow: hidden; }
 
 .finp {
   background: #f8fafc;
@@ -707,7 +708,7 @@ nav, .nav {
 
 /* ── Selector custom con ✕ integrado (csel) ──── */
 .csel-wrap     { border: 2px solid #bfdbfe; border-radius: 12px; background: #eff6ff; overflow: visible; position: relative; max-width: 100%; }
-.csel-trigger  { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; cursor: pointer; user-select: none; min-height: 44px; }
+.csel-trigger  { display: flex; align-items: center; justify-content: space-between; padding: 0 14px; cursor: pointer; user-select: none; height: 46px; }
 .csel-trigger-label { font-size: 13px; font-weight: 700; color: #1e3a8a; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .csel-trigger-arrow { font-size: 11px; color: #93c5fd; font-weight: 900; transition: transform .2s; margin-left: 6px; }
 .csel-dropdown { position: fixed; left: 0; right: 0; background: #fff; border: 2px solid #bfdbfe; border-radius: 12px; z-index: 400; box-shadow: 0 8px 24px rgba(15,23,42,.12); overflow: hidden; max-height: 280px; overflow-y: auto; }
@@ -745,7 +746,7 @@ nav, .nav {
 .nsel-wrap    { position: relative; }
 .nsel-trigger { display: flex; align-items: center; justify-content: space-between;
                 background: #eff6ff; border: 2px solid #bfdbfe; border-radius: 12px;
-                padding: 10px 14px; cursor: pointer; min-height: 46px; user-select: none; }
+                padding: 0 14px; cursor: pointer; height: 46px; user-select: none; }
 .nsel-label   { font-size: 13px; font-weight: 800; color: #1e3a8a; flex: 1; }
 .nsel-arrow   { font-size: 10px; color: #2563eb; font-weight: 900; margin-left: 6px;
                 transition: transform .2s; }

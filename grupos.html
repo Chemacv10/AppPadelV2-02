@@ -206,7 +206,7 @@
         </div>
         <div class="fgrp">
           <div class="flbl">Duración</div>
-          <div class="fsel-wrap" style="height:46px;display:flex;align-items:center"><select class="fsel" id="gr-duracion" style="height:46px">
+          <div class="fsel-wrap"><select class="fsel" id="gr-duracion">
             <option value="30">30 min</option>
             <option value="35">35 min</option>
             <option value="40">40 min</option>
@@ -267,7 +267,7 @@
       </div>
 
       <div class="sheet-btns">
-        <button class="sbtn" onclick="closeSheet('sh-grupo')">Cancelar</button>
+        <button class="sbtn" onclick="cancelarGrupo()">Cancelar</button>
         <button class="sbtn prim" onclick="guardar()">✓ Guardar</button>
       </div>
     </div>
@@ -463,7 +463,14 @@ function renderGrupoSelectores(nivelAct, pistaAct, monitorAct) {
   cselRender('gr-nivel-csel', _cfgNiveles, nivelAct || _cfgNiveles[0] || '',
     null, null,
     (val, lista) => { _cfgNiveles = lista; saveLista('niveles', lista); actualizarFiltroNivel(); },
-    (val, lista) => { _cfgNiveles = lista; saveLista('niveles', lista); actualizarFiltroNivel(); },
+    (val, lista) => {
+      _cfgNiveles = lista; saveLista('niveles', lista); actualizarFiltroNivel();
+      if (!NIVELES_GENERICOS.includes(val) && !_nivelesMapa[val]) {
+        mostrarDialogoGenerico(val, gen => {
+          if (gen) { _nivelesMapa[val] = gen; guardarNivelesMapa().catch(console.error); }
+        });
+      }
+    },
     '+ Añadir nivel…');
 
   cselRender('gr-pista-csel', ['— Sin pista —', ..._cfgPistas], pistaAct || '— Sin pista —',
@@ -479,13 +486,13 @@ function renderGrupoSelectores(nivelAct, pistaAct, monitorAct) {
     monitorAct || '— Sin monitor —',
     '— Sin monitor —',
     null, null,
-    () => { window.location.href = 'monitores.html'; },
+    () => { irANuevoMonitor(); },
     '→ Nuevo monitor');
   // Sobreescribir add-zone para mostrar link en vez de input
   setTimeout(() => {
     const az = document.getElementById('gr-monitor-csel-add-zone');
     if (az) az.innerHTML = `<div style="padding:10px 12px;border-top:1px solid #dbeafe">
-      <button onclick="window.location.href='monitores.html'"
+      <button onclick="irANuevoMonitor()"
         style="width:100%;background:none;border:none;color:#2563eb;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;text-align:left;padding:2px 0">
         + Nuevo monitor →
       </button></div>`;
@@ -495,9 +502,19 @@ function renderGrupoSelectores(nivelAct, pistaAct, monitorAct) {
 function actualizarFiltroNivel() {
   const fn = document.getElementById('filtro-nivel');
   if (!fn) return;
-  const c = fn.value;
-  fn.innerHTML = '<option value="">Todos</option>' + _cfgNiveles.map(v=>`<option value="${v}">${v}</option>`).join('');
-  if (c) fn.value = c;
+  const cur = fn.value;
+  const personalizados = _cfgNiveles.filter(n => !NIVELES_GENERICOS.includes(n));
+  const genericos = NIVELES_GENERICOS.filter(g => personalizados.some(n => _nivelesMapa[n] === g));
+  let opts = '<option value="">Todos</option>';
+  if (genericos.length) {
+    opts += '<optgroup label="\u2500\u2500 Por grupo \u2500\u2500">' +
+      genericos.map(g => `<option value="${g}">\u25b8 ${g}</option>`).join('') + '</optgroup>';
+  }
+  opts += '<optgroup label="\u2500\u2500 Nivel exacto \u2500\u2500">' +
+    _cfgNiveles.map(n => `<option value="${n}">${n}</option>`).join('') + '</optgroup>';
+  fn.innerHTML = opts;
+  if (cur) fn.value = cur;
+  nselSync('filtro-nivel');
 }
 function actualizarFiltroPista() {
   const fp = document.getElementById('filtro-pista');
@@ -529,7 +546,10 @@ function filtrar() {
 
   const lista = _grupos
     .filter(g => {
-      if (filtNivel   && g.nivel   !== filtNivel)   return false;
+      if (filtNivel) {
+        const genGrupo = nivelGenerico(g.nivel);
+        if (g.nivel !== filtNivel && genGrupo !== filtNivel) return false;
+      }
       if (filtPista   && g.pista   !== filtPista)   return false;
       if (filtMonitor && g.monitor !== filtMonitor) return false;
       if (!q) return true;
@@ -702,7 +722,15 @@ async function guardar() {
     max_alumnos:      parseInt(document.getElementById('gr-max-alumnos').value)  || 0,
   };
   try {
-    await saveGrupo(grupo);
+    const saved = await saveGrupo(grupo);
+    const returnTo = sessionStorage.getItem('grupos_returnTo');
+    if (returnTo) {
+      sessionStorage.removeItem('grupos_returnTo');
+      sessionStorage.removeItem('grupos_sheetOrigen');
+      toast('Grupo guardado', 'ok');
+      window.location.href = returnTo + '?grupoCreado=' + encodeURIComponent(nombre);
+      return;
+    }
     closeSheet('sh-grupo');
     toast('Grupo guardado', 'ok');
     await cargar();
@@ -996,6 +1024,7 @@ async function init() {
   if (cfg.niveles && cfg.niveles.length) _cfgNiveles = cfg.niveles;
   chipRegistrarLista('pistas',  _cfgPistas);
   chipRegistrarLista('niveles', _cfgNiveles);
+  await cargarNivelesMapa();
 
   // Cargar monitores reales de la tabla monitores
   try {
@@ -1009,6 +1038,54 @@ async function init() {
   nselInit('filtro-pista');
   nselInit('filtro-monitor');
   nselInit('gr-duracion');
+
+  // Retorno desde monitores: reabrir sheet de grupo
+  // Si venimos de clases para crear un grupo nuevo
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('returnTo') && !params.get('monitorCreado')) {
+    sessionStorage.setItem('grupos_returnTo', params.get('returnTo'));
+    abrirNuevo();
+  }
+  const monitorCreado = params.get('monitorCreado');
+  if (monitorCreado) {
+    // Recargar monitoresDB con el nuevo monitor
+    try { _monitoresDB = await getMonitores(true); } catch(e) {}
+    const sheetAbierto = sessionStorage.getItem('grupos_sheetAbierto');
+    const editandoId   = sessionStorage.getItem('grupos_editandoId');
+    sessionStorage.removeItem('grupos_sheetAbierto');
+    sessionStorage.removeItem('grupos_editandoId');
+    if (sheetAbierto === 'sh-grupo') {
+      if (editandoId) {
+        const g = _grupos.find(x => x.id === editandoId);
+        if (g) { abrirEditar(g); }
+        else { abrirNuevo(); }
+      } else {
+        abrirNuevo();
+      }
+      // Seleccionar el nuevo monitor en el csel
+      setTimeout(() => {
+        cselSetValue('gr-monitor-csel', monitorCreado);
+      }, 100);
+      toast('Monitor "' + monitorCreado + '" creado ✓', 'ok');
+    }
+  }
+}
+
+function irANuevoMonitor() {
+  sessionStorage.setItem('grupos_sheetAbierto', 'sh-grupo');
+  const grId = document.getElementById('gr-id')?.value || '';
+  sessionStorage.setItem('grupos_editandoId', grId);
+  window.location.href = 'monitores.html?returnTo=grupos.html';
+}
+
+function cancelarGrupo() {
+  const returnTo = sessionStorage.getItem('grupos_returnTo');
+  if (returnTo) {
+    sessionStorage.removeItem('grupos_returnTo');
+    window.location.href = returnTo;
+    return;
+  }
+  closeSheet('sh-grupo');
 }
 
 function abrirInfo() {

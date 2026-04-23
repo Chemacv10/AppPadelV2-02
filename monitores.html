@@ -187,7 +187,7 @@
       </div>
 
       <div class="sheet-btns">
-        <button class="sbtn" onclick="closeSheet('sh-monitor')">Cancelar</button>
+        <button class="sbtn" onclick="cancelarMonitor()">Cancelar</button>
         <button class="sbtn prim" onclick="guardar()">✓ Guardar</button>
       </div>
     </div>
@@ -631,6 +631,13 @@ async function guardar() {
       await _sb.from('monitor_permisos').insert(rows);
     }
 
+    const returnTo = sessionStorage.getItem('monitores_returnTo');
+    if (returnTo) {
+      sessionStorage.removeItem('monitores_returnTo');
+      toast('Monitor guardado ✓','ok');
+      window.location.href = returnTo + '?monitorCreado=' + encodeURIComponent(saved.nombre);
+      return;
+    }
     closeSheet('sh-monitor');
     toast('Monitor guardado ✓','ok');
     await cargar();
@@ -848,6 +855,23 @@ async function init() {
   nselInit('filtro-rol');
   nselInit('filtro-estado');
   nselInit('mo-rol');
+
+  // Si venimos desde otro formulario, abrir directamente el sheet de nuevo monitor
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('returnTo')) {
+    sessionStorage.setItem('monitores_returnTo', params.get('returnTo'));
+    abrirNuevo();
+  }
+}
+
+function cancelarMonitor() {
+  const returnTo = sessionStorage.getItem('monitores_returnTo');
+  if (returnTo) {
+    sessionStorage.removeItem('monitores_returnTo');
+    window.location.href = returnTo;
+    return;
+  }
+  closeSheet('sh-monitor');
 }
 
 function abrirInfo() { openSheet('sh-info-pagina'); }

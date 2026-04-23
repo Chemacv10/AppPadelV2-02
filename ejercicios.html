@@ -90,7 +90,16 @@
         </div>
         <div class="fgrp">
           <div class="flbl">Duración</div>
-          <input class="finp" id="ej-dur" placeholder="Ej: 15 min" value="15 min">
+          <div class="fsel-wrap"><select class="fsel" id="ej-dur">
+            <option value="5 min">5 min</option>
+            <option value="10 min">10 min</option>
+            <option value="15 min" selected>15 min</option>
+            <option value="20 min">20 min</option>
+            <option value="25 min">25 min</option>
+            <option value="30 min">30 min</option>
+            <option value="45 min">45 min</option>
+            <option value="60 min">60 min</option>
+          </select></div>
         </div>
       </div>
 
@@ -164,7 +173,10 @@ function filtrar() {
   const niv = document.getElementById('filtro-niv').value;
   const lista = _ejercicios.filter(e => {
     if (cat && e.categoria !== cat) return false;
-    if (niv && e.nivel !== niv && e.nivel) return false;
+    if (niv) {
+      const genEj = nivelGenerico(e.nivel);
+      if (e.nivel !== niv && genEj !== niv) return false;
+    }
     if (!q) return true;
     return [e.nombre, e.categoria, e.tipo, e.nivel, e.descripcion].filter(Boolean).join(' ').toLowerCase().includes(q);
   });
@@ -238,8 +250,24 @@ function renderEjTipoCsel(val) {
 function renderEjNivelCsel(val) {
   cselRender('ej-nivel-csel', ['— Todos los niveles —', ..._cfgNiveles], val || '— Todos los niveles —',
     '— Todos los niveles —', null,
-    (v, lista) => { _cfgNiveles = lista.filter(x=>x!=='— Todos los niveles —'); saveConfig('niveles', _cfgNiveles).catch(console.error); fillFiltroNivel(); },
-    (v, lista) => { _cfgNiveles = lista.filter(x=>x!=='— Todos los niveles —'); saveConfig('niveles', _cfgNiveles).catch(console.error); fillFiltroNivel(); },
+    (v, lista) => {
+      _cfgNiveles = lista.filter(x=>x!=='— Todos los niveles —');
+      saveConfig('niveles', _cfgNiveles).catch(console.error); fillFiltroNivel();
+      if (!NIVELES_GENERICOS.includes(v) && !_nivelesMapa[v]) {
+        mostrarDialogoGenerico(v, gen => {
+          if (gen) { _nivelesMapa[v] = gen; guardarNivelesMapa().catch(console.error); }
+        });
+      }
+    },
+    (v, lista) => {
+      _cfgNiveles = lista.filter(x=>x!=='— Todos los niveles —');
+      saveConfig('niveles', _cfgNiveles).catch(console.error); fillFiltroNivel();
+      if (!NIVELES_GENERICOS.includes(v) && !_nivelesMapa[v]) {
+        mostrarDialogoGenerico(v, gen => {
+          if (gen) { _nivelesMapa[v] = gen; guardarNivelesMapa().catch(console.error); }
+        });
+      }
+    },
     '+ Añadir nivel…');
 }
 
@@ -250,9 +278,18 @@ function fillFiltroNivel() {
   const sel = document.getElementById('filtro-niv');
   if (!sel) return;
   const cur = sel.value;
-  sel.innerHTML = '<option value="">Todos</option>' +
-    _cfgNiveles.map(n => `<option value="${n}">${n}</option>`).join('');
+  const personalizados = _cfgNiveles.filter(n => !NIVELES_GENERICOS.includes(n));
+  const genericos = NIVELES_GENERICOS.filter(g => personalizados.some(n => _nivelesMapa[n] === g));
+  let opts = '<option value="">Todos</option>';
+  if (genericos.length) {
+    opts += '<optgroup label="── Por grupo ──">' +
+      genericos.map(g => `<option value="${g}">▸ ${g}</option>`).join('') + '</optgroup>';
+  }
+  opts += '<optgroup label="── Nivel exacto ──">' +
+    _cfgNiveles.map(n => `<option value="${n}">${n}</option>`).join('') + '</optgroup>';
+  sel.innerHTML = opts;
   if (cur) sel.value = cur;
+  nselSync('filtro-niv');
 }
 
 function actualizarFiltrosCat() {
@@ -269,7 +306,7 @@ function actualizarFiltrosCat() {
 function abrirNuevo() {
   document.getElementById('sh-titulo').textContent = 'Nuevo ejercicio';
   ['ej-id','ej-nombre','ej-mat','ej-desc','ej-video'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('ej-dur').value = '15 min';
+  document.getElementById('ej-dur').value = '15 min'; nselSync('ej-dur');
   renderEjCatCsel('Calentamiento');
   renderEjTipoCsel('— Sin tipo —');
   renderEjNivelCsel('— Todos los niveles —');
@@ -285,7 +322,7 @@ function abrirEditar(e) {
   document.getElementById('sh-titulo').textContent = 'Editar ejercicio';
   document.getElementById('ej-id').value      = e.id;
   document.getElementById('ej-nombre').value  = e.nombre;
-  document.getElementById('ej-dur').value     = e.duracion  || '15 min';
+  document.getElementById('ej-dur').value     = e.duracion  || '15 min'; nselSync('ej-dur');
   document.getElementById('ej-mat').value     = e.material  || '';
   document.getElementById('ej-desc').value    = e.descripcion || '';
   document.getElementById('ej-video').value   = e.video_url  || '';
@@ -386,6 +423,7 @@ async function init() {
   if (cfg.categorias  && cfg.categorias.length)  _cfgCategorias = cfg.categorias;
   if (cfg.tipos   && cfg.tipos.length)   _cfgTipos   = cfg.tipos;
   chipRegistrarLista('niveles', _cfgNiveles);
+  await cargarNivelesMapa();
   fillFiltroNivel();
 
   await cargar();
@@ -393,6 +431,7 @@ async function init() {
   // ── Inicializar selects custom ──
   nselInit('filtro-cat');
   nselInit('filtro-niv');
+  nselInit('ej-dur');
 
 }
 function abrirInfo() {

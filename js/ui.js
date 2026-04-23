@@ -149,6 +149,33 @@ function initFiltros(containerSelector, onChange) {
   });
 }
 
+// ── Diálogo: asignar genérico a nivel nuevo ─────
+function mostrarDialogoGenerico(nivelNuevo, onConfirm) {
+  const existing = document.getElementById('_dialogo-generico');
+  if (existing) existing.remove();
+  const div = document.createElement('div');
+  div.id = '_dialogo-generico';
+  div.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,.5);z-index:600;display:flex;align-items:center;justify-content:center;padding:24px';
+  const btns = NIVELES_GENERICOS.map(g => {
+    const col = _COLOR_GENERICOS[g];
+    return `<button onclick="window._cg('${g}')"
+      style="padding:11px 14px;border-radius:12px;border:2px solid ${col.tx};background:${col.bg};color:${col.tx};font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;text-align:left;width:100%">
+      ${g}</button>`;
+  }).join('');
+  div.innerHTML = `
+    <div style="background:#fff;border-radius:18px;padding:22px 18px;width:100%;max-width:340px;box-shadow:0 12px 40px rgba(0,0,0,.2)">
+      <div style="font-size:15px;font-weight:900;color:#1e293b;margin-bottom:6px">Nuevo nivel: <em>${nivelNuevo}</em></div>
+      <div style="font-size:12px;font-weight:600;color:#64748b;margin-bottom:16px;line-height:1.5">
+        ¿A qué nivel genérico corresponde? Permite agrupar en filtros y estadísticas.</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px">${btns}</div>
+      <button onclick="window._cg('')"
+        style="width:100%;padding:10px;border-radius:12px;border:1.5px solid #e2e8f0;background:#f8fafc;color:#64748b;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">
+        Sin agrupar</button>
+    </div>`;
+  document.body.appendChild(div);
+  window._cg = (gen) => { div.remove(); delete window._cg; onConfirm(gen); };
+}
+
 // ── Bottom Sheets ─────────────────────────────
 
 function openSheet(id) {
@@ -264,6 +291,24 @@ function avatarHTML(nombre, claseExtra = '') {
 
 // ── Paleta de chips ───────────────────────────
 // 12 pares fondo/texto — se asignan por posición en lista o hash del string
+// ── Mapa de niveles personalizados → genérico ──────────
+// { "Iniciación 1": "Principiante", "Perfeccionamiento": "Avanzado", ... }
+let _nivelesMapa = {};
+const NIVELES_GENERICOS = ['Principiante', 'Intermedio', 'Avanzado'];
+
+function nivelGenerico(nivel) {
+  if (!nivel) return '';
+  if (NIVELES_GENERICOS.includes(nivel)) return nivel;
+  return _nivelesMapa[nivel] || '';
+}
+
+// Colores fijos para los 3 genéricos
+const _COLOR_GENERICOS = {
+  'Principiante': { bg:'#dcfce7', tx:'#15803d' },
+  'Intermedio':   { bg:'#dbeafe', tx:'#1e40af' },
+  'Avanzado':     { bg:'#f3e8ff', tx:'#7c3aed' },
+};
+
 const _CHIP_PALETA = [
   { bg:'#dbeafe', tx:'#1e40af' }, // azul
   { bg:'#dcfce7', tx:'#15803d' }, // verde
@@ -306,8 +351,13 @@ function cardBorderColor(valor, clave) {
 
 function chipNivel(nivel) {
   if (!nivel) return '';
-  const c = chipColor(nivel, 'niveles');
-  return `<span class="chip" style="background:${c.bg};color:${c.tx}">${nivel}</span>`;
+  const gen = nivelGenerico(nivel);
+  const c = gen ? (_COLOR_GENERICOS[gen] || chipColor(nivel,'niveles')) : chipColor(nivel,'niveles');
+  const tooltip = gen && gen !== nivel ? ` title="${gen}"` : '';
+  const badge = gen && gen !== nivel
+    ? `<span style="font-size:9px;opacity:.75;margin-left:3px">(${gen.slice(0,3).toLowerCase()}.)</span>`
+    : '';
+  return `<span class="chip" style="background:${c.bg};color:${c.tx}"${tooltip}>${nivel}${badge}</span>`;
 }
 
 function chipPista(pista) {

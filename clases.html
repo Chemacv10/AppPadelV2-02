@@ -230,6 +230,10 @@
           <div class="fgrp">
             <div class="flbl">Grupo</div>
             <div class="fsel-wrap"><select class="fsel" id="cl-grupo"><option value="">— Sin grupo —</option></select></div>
+            <button type="button" onclick="irANuevoGrupo()"
+              style="margin-top:5px;background:none;border:none;color:#2563eb;font-size:12px;font-weight:800;cursor:pointer;padding:2px 0;font-family:inherit;text-align:left">
+              + Nuevo grupo →
+            </button>
           </div>
         </div>
         <div class="frow">
@@ -1213,6 +1217,22 @@ async function init(){
   nselInit('cl-grupo');
   nselInit('cl-duracion');
   nselInit('cl-estado-sel');
+
+  // Retorno desde grupos: reabrir wizard
+  const params = new URLSearchParams(window.location.search);
+  const grupoCreado = params.get('grupoCreado');
+  if (grupoCreado) {
+    sessionStorage.removeItem('clases_sheetAbierto');
+    // Recargar grupos y seleccionar el nuevo
+    await cargarGrupos();
+    abrirNueva();
+    setTimeout(() => {
+      const sel = document.getElementById('cl-grupo');
+      const opt = Array.from(sel.options).find(o => o.text === grupoCreado);
+      if (opt) { sel.value = opt.value; nselSync('cl-grupo'); }
+    }, 200);
+    toast('Grupo "' + grupoCreado + '" creado ✓', 'ok');
+  }
 }
 
 function _diffMin(h1, h2){
@@ -1240,6 +1260,11 @@ async function _actualizarBloqueInfo(){
     info.innerHTML=`⚠️ Sin semana de pistas para esta fecha`;
     wrap.style.display='block';
   }
+}
+
+function irANuevoGrupo() {
+  sessionStorage.setItem('clases_sheetAbierto', 'wizard');
+  window.location.href = 'grupos.html?returnTo=clases.html';
 }
 
 function abrirInfo() {

@@ -107,6 +107,10 @@
       <div class="fgrp">
         <div class="flbl">Grupo</div>
         <div class="fsel-wrap"><select class="fsel" id="al-grupo"><option value="">Sin grupo</option></select></div>
+        <button type="button" onclick="irANuevoGrupoDesdeAlumno()"
+          style="margin-top:5px;background:none;border:none;color:#2563eb;font-size:12px;font-weight:800;cursor:pointer;padding:2px 0;font-family:inherit;text-align:left">
+          + Nuevo grupo →
+        </button>
       </div>
 
       <!-- Teléfono y email -->
@@ -200,7 +204,11 @@ function filtrar() {
     .filter(a => {
       if (filtEstado === 'activos'   && a.activo === false) return false;
       if (filtEstado === 'inactivos' && a.activo !== false) return false;
-      if (filtNivel && a.nivel !== filtNivel) return false;
+      if (filtNivel) {
+        // Filtrar por nivel exacto O por genérico
+        const genAlumno = nivelGenerico(a.nivel);
+        if (a.nivel !== filtNivel && genAlumno !== filtNivel) return false;
+      }
       if (filtGrupo === '__sin_grupo__') { if (a.grupo_id) return false; }
       else if (filtGrupo && a.grupo_id !== filtGrupo) return false;
       if (!q) return true;
@@ -300,6 +308,12 @@ function renderNivelCsel(valorActual) {
       _cfgNiveles = lista;
       saveConfig('niveles', lista).catch(console.error);
       actualizarFiltrosNivel();
+      // Preguntar genérico si es nivel nuevo no genérico
+      if (!NIVELES_GENERICOS.includes(val) && !_nivelesMapa[val]) {
+        mostrarDialogoGenerico(val, gen => {
+          if (gen) { _nivelesMapa[val] = gen; guardarNivelesMapa().catch(console.error); }
+        });
+      }
     },
     '+ Añadir nivel…'
   );
@@ -309,9 +323,18 @@ function actualizarFiltrosNivel() {
   const sel = document.getElementById('filtro-nivel');
   if (!sel) return;
   const cur = sel.value;
-  sel.innerHTML = '<option value="">Todos</option>' +
-    _cfgNiveles.map(n => `<option value="${n}">${n}</option>`).join('');
+  const personalizados = _cfgNiveles.filter(n => !NIVELES_GENERICOS.includes(n));
+  const genericos = NIVELES_GENERICOS.filter(g => personalizados.some(n => _nivelesMapa[n] === g));
+  let opts = '<option value="">Todos</option>';
+  if (genericos.length) {
+    opts += '<optgroup label="── Por grupo ──">' +
+      genericos.map(g => `<option value="${g}">▸ ${g}</option>`).join('') + '</optgroup>';
+  }
+  opts += '<optgroup label="── Nivel exacto ──">' +
+    _cfgNiveles.map(n => `<option value="${n}">${n}</option>`).join('') + '</optgroup>';
+  sel.innerHTML = opts;
   if (cur) sel.value = cur;
+  nselSync('filtro-nivel');
 }
 
 // ── Foto ───────────────────────────────────────
@@ -653,6 +676,7 @@ async function init() {
   const cfg = await getConfigMultiple(['niveles']);
   if (cfg.niveles && cfg.niveles.length) _cfgNiveles = cfg.niveles;
   chipRegistrarLista('niveles', _cfgNiveles);
+  await cargarNivelesMapa();
   actualizarFiltrosNivel();
 
   await cargarGrupos();
@@ -663,6 +687,38 @@ async function init() {
   nselInit('filtro-grupo');
   nselInit('filtro-estado');
   nselInit('al-grupo');
+
+  // Retorno desde grupos: reabrir sheet de alumno y seleccionar el grupo creado
+  const params = new URLSearchParams(window.location.search);
+  const grupoCreado = params.get('grupoCreado');
+  if (grupoCreado) {
+    const alId = sessionStorage.getItem('alumnos_editandoId') || '';
+    sessionStorage.removeItem('alumnos_sheetAbierto');
+    sessionStorage.removeItem('alumnos_editandoId');
+    // Reabrir sheet
+    if (alId) {
+      const a = _alumnos.find(x => x.id === alId);
+      if (a) abrirEditar(a);
+      else abrirNuevo();
+    } else {
+      abrirNuevo();
+    }
+    // Seleccionar el grupo recién creado
+    setTimeout(() => {
+      const sel = document.getElementById('al-grupo');
+      const opt = Array.from(sel.options).find(o => o.text === grupoCreado);
+      if (opt) { sel.value = opt.value; nselSync('al-grupo'); }
+    }, 200);
+    toast('Grupo "' + grupoCreado + '" creado ✓', 'ok');
+  }
+}
+
+function irANuevoGrupoDesdeAlumno() {
+  // Guardar el alumno que se estaba editando para volver
+  sessionStorage.setItem('alumnos_sheetAbierto', 'sh-alumno');
+  const alId = document.getElementById('al-id')?.value || '';
+  sessionStorage.setItem('alumnos_editandoId', alId);
+  window.location.href = 'grupos.html?returnTo=alumnos.html';
 }
 
 function abrirInfo() {

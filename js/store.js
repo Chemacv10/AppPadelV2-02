@@ -664,3 +664,22 @@ async function getPermisosUsuarioActual() {
   Store.monitorActual = { id: data.id, rol: data.rol, permisos };
   return new Set(permisos);
 }
+
+// ── Niveles mapa ──────────────────────────────
+
+/**
+ * Carga el mapa de niveles personalizados → genérico.
+ * Lo asigna a _nivelesMapa (global de ui.js).
+ */
+async function cargarNivelesMapa() {
+  try {
+    const cfg = await getConfig('niveles_mapa');
+    if (cfg && typeof cfg === 'object' && !Array.isArray(cfg)) {
+      _nivelesMapa = cfg;
+    }
+  } catch(e) { console.warn('niveles_mapa no cargado:', e); }
+}
+
+async function guardarNivelesMapa() {
+  await saveConfig('niveles_mapa', _nivelesMapa);
+}
