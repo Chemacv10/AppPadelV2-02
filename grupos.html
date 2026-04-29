@@ -68,14 +68,14 @@
     }
     .hpick-btn {
       background:none; border:none; color:var(--azul);
-      font-size:20px; font-weight:900; padding:0 12px; height:46px;
+      font-size:20px; font-weight:900; padding:0 12px; height:42px;
       cursor:pointer; font-family:inherit; flex-shrink:0;
       -webkit-tap-highlight-color:transparent;
     }
     .hpick-btn:active { opacity:.6; }
     .hpick-val {
       flex:1; display:flex; align-items:center; justify-content:center; gap:6px;
-      font-size:18px; font-weight:900; color:var(--texto); height:46px;
+      font-size:18px; font-weight:900; color:var(--texto); height:42px;
       -webkit-tap-highlight-color:transparent; user-select:none;
     }
     .hpick-val-arrow { font-size:13px; color:var(--azul); font-weight:900; }
@@ -267,7 +267,7 @@
       </div>
 
       <div class="sheet-btns">
-        <button class="sbtn" onclick="closeSheet('sh-grupo')">Cancelar</button>
+        <button class="sbtn" onclick="cancelarGrupo()">Cancelar</button>
         <button class="sbtn prim" onclick="guardar()">✓ Guardar</button>
       </div>
     </div>
@@ -349,7 +349,8 @@ let _grupos       = [];
 let _filtroNivel  = '';
 let _alumnosGrupo = {};
 let _cfgPistas    = [];
-let _cfgMonitores = [];
+let _cfgMonitores = [];  // lista de texto (compatibilidad legacy)
+let _monitoresDB  = [];  // monitores reales de la tabla monitores
 let _cfgNiveles   = ['Principiante', 'Intermedio', 'Avanzado'];
 
 // ── Hora picker custom ─────────────────────────
@@ -462,7 +463,14 @@ function renderGrupoSelectores(nivelAct, pistaAct, monitorAct) {
   cselRender('gr-nivel-csel', _cfgNiveles, nivelAct || _cfgNiveles[0] || '',
     null, null,
     (val, lista) => { _cfgNiveles = lista; saveLista('niveles', lista); actualizarFiltroNivel(); },
-    (val, lista) => { _cfgNiveles = lista; saveLista('niveles', lista); actualizarFiltroNivel(); },
+    (val, lista) => {
+      _cfgNiveles = lista; saveLista('niveles', lista); actualizarFiltroNivel();
+      if (!NIVELES_GENERICOS.includes(val) && !_nivelesMapa[val]) {
+        mostrarDialogoGenerico(val, gen => {
+          if (gen) { _nivelesMapa[val] = gen; guardarNivelesMapa().catch(console.error); }
+        });
+      }
+    },
     '+ Añadir nivel…');
 
   cselRender('gr-pista-csel', ['— Sin pista —', ..._cfgPistas], pistaAct || '— Sin pista —',
@@ -471,19 +479,42 @@ function renderGrupoSelectores(nivelAct, pistaAct, monitorAct) {
     (val, lista) => { _cfgPistas = lista.filter(v=>v!=='— Sin pista —'); saveLista('pistas', _cfgPistas); actualizarFiltroPista(); },
     '+ Añadir pista…');
 
-  cselRender('gr-monitor-csel', ['— Sin monitor —', ..._cfgMonitores], monitorAct || '— Sin monitor —',
-    '— Sin monitor —', null,
-    (val, lista) => { _cfgMonitores = lista.filter(v=>v!=='— Sin monitor —'); saveLista('monitores', _cfgMonitores); actualizarFiltroMonitor(); },
-    (val, lista) => { _cfgMonitores = lista.filter(v=>v!=='— Sin monitor —'); saveLista('monitores', _cfgMonitores); actualizarFiltroMonitor(); },
-    '+ Añadir monitor…');
+  // Monitor: usa nombres de la tabla monitores real; + redirige a monitores.html
+  const nombresMonitores = _monitoresDB.map(m => m.nombre);
+  cselRender('gr-monitor-csel',
+    ['— Sin monitor —', ...nombresMonitores],
+    monitorAct || '— Sin monitor —',
+    '— Sin monitor —',
+    null, null,
+    () => { irANuevoMonitor(); },
+    '→ Nuevo monitor');
+  // Sobreescribir add-zone para mostrar link en vez de input
+  setTimeout(() => {
+    const az = document.getElementById('gr-monitor-csel-add-zone');
+    if (az) az.innerHTML = `<div style="padding:10px 12px;border-top:1px solid #dbeafe">
+      <button onclick="irANuevoMonitor()"
+        style="width:100%;background:none;border:none;color:#2563eb;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;text-align:left;padding:2px 0">
+        + Nuevo monitor →
+      </button></div>`;
+  }, 0);
 }
 
 function actualizarFiltroNivel() {
   const fn = document.getElementById('filtro-nivel');
   if (!fn) return;
-  const c = fn.value;
-  fn.innerHTML = '<option value="">Todos</option>' + _cfgNiveles.map(v=>`<option value="${v}">${v}</option>`).join('');
-  if (c) fn.value = c;
+  const cur = fn.value;
+  const personalizados = _cfgNiveles.filter(n => !NIVELES_GENERICOS.includes(n));
+  const genericos = NIVELES_GENERICOS.filter(g => personalizados.some(n => _nivelesMapa[n] === g));
+  let opts = '<option value="">Todos</option>';
+  if (genericos.length) {
+    opts += '<optgroup label="\u2500\u2500 Por grupo \u2500\u2500">' +
+      genericos.map(g => `<option value="${g}">\u25b8 ${g}</option>`).join('') + '</optgroup>';
+  }
+  opts += '<optgroup label="\u2500\u2500 Nivel exacto \u2500\u2500">' +
+    _cfgNiveles.map(n => `<option value="${n}">${n}</option>`).join('') + '</optgroup>';
+  fn.innerHTML = opts;
+  if (cur) fn.value = cur;
+  nselSync('filtro-nivel');
 }
 function actualizarFiltroPista() {
   const fp = document.getElementById('filtro-pista');
@@ -496,7 +527,7 @@ function actualizarFiltroMonitor() {
   const fm = document.getElementById('filtro-monitor');
   if (!fm) return;
   const c = fm.value;
-  fm.innerHTML = '<option value="">Todos</option>' + _cfgMonitores.map(v=>`<option value="${v}">${v}</option>`).join('');
+  fm.innerHTML = '<option value="">Todos</option>' + _monitoresDB.map(m=>`<option value="${m.nombre}">${m.nombre}</option>`).join('');
   if (c) fm.value = c;
 }
 
@@ -515,7 +546,10 @@ function filtrar() {
 
   const lista = _grupos
     .filter(g => {
-      if (filtNivel   && g.nivel   !== filtNivel)   return false;
+      if (filtNivel) {
+        const genGrupo = nivelGenerico(g.nivel);
+        if (g.nivel !== filtNivel && genGrupo !== filtNivel) return false;
+      }
       if (filtPista   && g.pista   !== filtPista)   return false;
       if (filtMonitor && g.monitor !== filtMonitor) return false;
       if (!q) return true;
@@ -647,10 +681,18 @@ function abrirEditar(g) {
     document.getElementById('gr-duracion').value = String(g.duracion || 60);
   }
   nselSync('gr-duracion');
+  // Resolver nombre monitor: primero por monitor_id, luego por texto legacy
+  let monitorNombre = '— Sin monitor —';
+  if (g.monitor_id) {
+    const m = _monitoresDB.find(x => x.id === g.monitor_id);
+    if (m) monitorNombre = m.nombre;
+  } else if (g.monitor) {
+    monitorNombre = g.monitor;
+  }
   renderGrupoSelectores(
-    g.nivel   || _cfgNiveles[0] || '',
-    g.pista   || '— Sin pista —',
-    g.monitor || '— Sin monitor —'
+    g.nivel || _cfgNiveles[0] || '',
+    g.pista || '— Sin pista —',
+    monitorNombre
   );
   openSheet('sh-grupo');
 }
@@ -675,15 +717,24 @@ async function guardar() {
     duracion:         parseInt(document.getElementById('gr-duracion').value) || 60,
     pista:            (() => { const v = cselGetValue('gr-pista-csel'); return v === '— Sin pista —' ? '' : v; })(),
     monitor:          (() => { const v = cselGetValue('gr-monitor-csel'); return v === '— Sin monitor —' ? '' : v; })(),
+    monitor_id:       (() => { const v = cselGetValue('gr-monitor-csel'); if (!v || v === '— Sin monitor —') return undefined; return _monitoresDB.find(m=>m.nombre===v)?.id || undefined; })(),
     importe_mensual:  parseFloat(document.getElementById('gr-importe').value) || 0,
     max_alumnos:      parseInt(document.getElementById('gr-max-alumnos').value)  || 0,
   };
   try {
-    await saveGrupo(grupo);
+    const saved = await saveGrupo(grupo);
+    const returnTo = sessionStorage.getItem('grupos_returnTo');
+    if (returnTo) {
+      sessionStorage.removeItem('grupos_returnTo');
+      sessionStorage.removeItem('grupos_sheetOrigen');
+      toast('Grupo guardado', 'ok');
+      window.location.href = returnTo + '?grupoCreado=' + encodeURIComponent(nombre);
+      return;
+    }
     closeSheet('sh-grupo');
     toast('Grupo guardado', 'ok');
     await cargar();
-  } catch(e) { toast('Error al guardar', 'err'); console.error(e); }
+  } catch(e) { toast('Error: ' + (e.message || JSON.stringify(e)), 'err'); console.error(e); }
 }
 
 // ── Eliminar ───────────────────────────────────
@@ -753,7 +804,7 @@ async function guardarConfig() {
     fillDropdowns();
     closeSheet('sh-config');
     toast('✓ Configuración guardada', 'ok');
-  } catch(e) { toast('Error al guardar', 'err'); console.error(e); }
+  } catch(e) { toast('Error: ' + (e.message || JSON.stringify(e)), 'err'); console.error(e); }
 }
 
 // ── Cargar ─────────────────────────────────────
@@ -966,15 +1017,20 @@ async function init() {
 
   // Cargar config y grupos en paralelo
   const [cfg] = await Promise.all([
-    getConfigMultiple(['pistas','monitores','niveles']),
+    getConfigMultiple(['pistas','niveles']),
     cargar(),
   ]);
-  _cfgPistas    = cfg.pistas    || [];
-  _cfgMonitores = cfg.monitores || [];
+  _cfgPistas = cfg.pistas || [];
   if (cfg.niveles && cfg.niveles.length) _cfgNiveles = cfg.niveles;
-  chipRegistrarLista('pistas',    _cfgPistas);
-  chipRegistrarLista('monitores', _cfgMonitores);
-  chipRegistrarLista('niveles',   _cfgNiveles);
+  chipRegistrarLista('pistas',  _cfgPistas);
+  chipRegistrarLista('niveles', _cfgNiveles);
+  await cargarNivelesMapa();
+
+  // Cargar monitores reales de la tabla monitores
+  try {
+    _monitoresDB = await getMonitores(true); // solo activos
+    chipRegistrarLista('monitores', _monitoresDB.map(m=>m.nombre));
+  } catch(e) { _monitoresDB = []; }
   fillDropdowns();
 
   // ── Inicializar selects custom ──
@@ -982,6 +1038,54 @@ async function init() {
   nselInit('filtro-pista');
   nselInit('filtro-monitor');
   nselInit('gr-duracion');
+
+  // Retorno desde monitores: reabrir sheet de grupo
+  // Si venimos de clases para crear un grupo nuevo
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('returnTo') && !params.get('monitorCreado')) {
+    sessionStorage.setItem('grupos_returnTo', params.get('returnTo'));
+    abrirNuevo();
+  }
+  const monitorCreado = params.get('monitorCreado');
+  if (monitorCreado) {
+    // Recargar monitoresDB con el nuevo monitor
+    try { _monitoresDB = await getMonitores(true); } catch(e) {}
+    const sheetAbierto = sessionStorage.getItem('grupos_sheetAbierto');
+    const editandoId   = sessionStorage.getItem('grupos_editandoId');
+    sessionStorage.removeItem('grupos_sheetAbierto');
+    sessionStorage.removeItem('grupos_editandoId');
+    if (sheetAbierto === 'sh-grupo') {
+      if (editandoId) {
+        const g = _grupos.find(x => x.id === editandoId);
+        if (g) { abrirEditar(g); }
+        else { abrirNuevo(); }
+      } else {
+        abrirNuevo();
+      }
+      // Seleccionar el nuevo monitor en el csel
+      setTimeout(() => {
+        cselSetValue('gr-monitor-csel', monitorCreado);
+      }, 100);
+      toast('Monitor "' + monitorCreado + '" creado ✓', 'ok');
+    }
+  }
+}
+
+function irANuevoMonitor() {
+  sessionStorage.setItem('grupos_sheetAbierto', 'sh-grupo');
+  const grId = document.getElementById('gr-id')?.value || '';
+  sessionStorage.setItem('grupos_editandoId', grId);
+  window.location.href = 'monitores.html?returnTo=grupos.html';
+}
+
+function cancelarGrupo() {
+  const returnTo = sessionStorage.getItem('grupos_returnTo');
+  if (returnTo) {
+    sessionStorage.removeItem('grupos_returnTo');
+    window.location.href = returnTo;
+    return;
+  }
+  closeSheet('sh-grupo');
 }
 
 function abrirInfo() {
