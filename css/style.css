@@ -746,7 +746,7 @@ nav, .nav {
 .nsel-wrap    { position: relative; }
 .nsel-trigger { display: flex; align-items: center; justify-content: space-between;
                 background: #eff6ff; border: 2px solid #bfdbfe; border-radius: 12px;
-                padding: 10px 14px; cursor: pointer; min-height: 46px; user-select: none; }
+                padding: 0 14px; cursor: pointer; height: 48px; min-height: 48px; box-sizing: border-box; user-select: none; }
 .nsel-label   { font-size: 13px; font-weight: 800; color: #1e3a8a; flex: 1; }
 .nsel-arrow   { font-size: 10px; color: #2563eb; font-weight: 900; margin-left: 6px;
                 transition: transform .2s; }
