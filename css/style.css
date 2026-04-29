@@ -405,9 +405,8 @@ nav, .nav {
 /* ── Formularios ─────────────────────────────── */
 .fgrp  { display: flex; flex-direction: column; gap: 3px; margin-bottom: 10px; }
 .flbl  { font-size: 10px; font-weight: 900; color: var(--azul); text-transform: uppercase; letter-spacing: .4px; }
-.frow  { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; min-width: 0; }
-.frow3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; min-width: 0; }
-.frow > *, .frow3 > * { min-width: 0; overflow: hidden; }
+.frow  { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.frow3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
 
 .finp {
   background: #f8fafc;
@@ -707,11 +706,11 @@ nav, .nav {
 .cfg-listo  { display: block; width: calc(100% - 22px); margin: 13px 11px 0; padding: 12px; background: var(--azul); color: #fff; border: none; border-radius: 12px; font-size: 14px; font-weight: 900; cursor: pointer; font-family: Nunito, sans-serif; }
 
 /* ── Selector custom con ✕ integrado (csel) ──── */
-.csel-wrap     { border: 2px solid #bfdbfe; border-radius: 12px; background: #eff6ff; overflow: visible; position: relative; max-width: 100%; }
-.csel-trigger  { display: flex; align-items: center; justify-content: space-between; padding: 0 14px; cursor: pointer; user-select: none; height: 46px; }
-.csel-trigger-label { font-size: 13px; font-weight: 700; color: #1e3a8a; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.csel-wrap     { border: 2px solid #bfdbfe; border-radius: 12px; background: #eff6ff; overflow: visible; position: relative; }
+.csel-trigger  { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; cursor: pointer; user-select: none; min-height: 44px; }
+.csel-trigger-label { font-size: 13px; font-weight: 700; color: #1e3a8a; flex: 1; }
 .csel-trigger-arrow { font-size: 11px; color: #93c5fd; font-weight: 900; transition: transform .2s; margin-left: 6px; }
-.csel-dropdown { position: fixed; left: 0; right: 0; background: #fff; border: 2px solid #bfdbfe; border-radius: 12px; z-index: 400; box-shadow: 0 8px 24px rgba(15,23,42,.12); overflow: hidden; max-height: 280px; overflow-y: auto; }
+.csel-dropdown { position: absolute; left: -2px; top: calc(100% + 4px); min-width: calc(100% + 4px); width: max-content; background: #fff; border: 2px solid #bfdbfe; border-radius: 12px; z-index: 200; box-shadow: 0 8px 24px rgba(15,23,42,.12); overflow: hidden; }
 .csel-lista    { display: flex; flex-direction: column; max-height: 220px; overflow-y: auto; }
 .csel-item     { display: flex; align-items: center; padding: 10px 12px; border-bottom: 1px solid #dbeafe; cursor: pointer; transition: background .12s; gap: 10px; }
 .csel-item:last-child { border-bottom: none; }
@@ -720,7 +719,7 @@ nav, .nav {
 .csel-radio    { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #93c5fd; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: #fff; transition: all .12s; }
 .csel-item.selected .csel-radio { background: var(--azul); border-color: var(--azul); }
 .csel-item.selected .csel-radio::after { content: ''; width: 6px; height: 6px; background: #fff; border-radius: 50%; }
-.csel-label    { flex: 1; font-size: 13px; font-weight: 700; color: var(--texto); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.csel-label    { flex: 1; font-size: 13px; font-weight: 700; color: var(--texto); }
 .csel-item.selected .csel-label { color: #1e40af; font-weight: 800; }
 .csel-del      { width: 24px; height: 24px; border-radius: 6px; background: #fee2e2; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 900; color: var(--rojo); flex-shrink: 0; font-family: Nunito, sans-serif; transition: background .12s; }
 .csel-del:hover { background: #fca5a5; }
@@ -746,7 +745,7 @@ nav, .nav {
 .nsel-wrap    { position: relative; }
 .nsel-trigger { display: flex; align-items: center; justify-content: space-between;
                 background: #eff6ff; border: 2px solid #bfdbfe; border-radius: 12px;
-                padding: 0 14px; cursor: pointer; height: 48px; min-height: 48px; box-sizing: border-box; user-select: none; }
+                padding: 10px 14px; cursor: pointer; min-height: 44px; user-select: none; }
 .nsel-label   { font-size: 13px; font-weight: 800; color: #1e3a8a; flex: 1; }
 .nsel-arrow   { font-size: 10px; color: #2563eb; font-weight: 900; margin-left: 6px;
                 transition: transform .2s; }
