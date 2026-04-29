@@ -427,12 +427,12 @@ nav, .nav {
   background-size: 12px 8px;
   border: 2px solid #bfdbfe;
   border-radius: 12px;
-  padding: 0 36px 0 14px;
+  padding: 10px 36px 10px 14px;
   font-size: 13px; font-weight: 800; color: #1e3a8a;
   outline: none; width: 100%; cursor: pointer;
   transition: border-color .15s, box-shadow .15s;
   font-family: Nunito, sans-serif;
-  height: 46px; min-height: 46px; box-sizing: border-box;
+  min-height: 44px;
 }
 .fsel:focus { border-color: var(--azul); box-shadow: 0 0 0 3px rgba(37,99,235,.1); }
 /* Wrapper para fsel — garantiza que la flecha custom se ve en Samsung Internet */
@@ -746,7 +746,7 @@ nav, .nav {
 .nsel-wrap    { position: relative; }
 .nsel-trigger { display: flex; align-items: center; justify-content: space-between;
                 background: #eff6ff; border: 2px solid #bfdbfe; border-radius: 12px;
-                padding: 0 14px; cursor: pointer; height: 46px; user-select: none; }
+                padding: 10px 14px; cursor: pointer; min-height: 44px; user-select: none; }
 .nsel-label   { font-size: 13px; font-weight: 800; color: #1e3a8a; flex: 1; }
 .nsel-arrow   { font-size: 10px; color: #2563eb; font-weight: 900; margin-left: 6px;
                 transition: transform .2s; }
