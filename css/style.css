@@ -134,13 +134,12 @@ nav, .nav {
   background: #f8fafc;
   user-select: none;
   transition: background .15s;
-  /* reset button styles */
   -webkit-appearance: none;
   appearance: none;
   outline: none;
   box-shadow: none;
 }
-.nav-tab-active { /* color aplicado inline */ }
+.nav-tab-active { }
 .nav-tab-title {
   font-size: 10px; font-weight: 900; color: var(--sub); line-height: 1.2;
 }
@@ -160,7 +159,7 @@ nav, .nav {
   gap: 6px;
 }
 
-/* Items — igual que antes */
+/* Items */
 .nav-item {
   display: flex; flex-direction: column; align-items: center; gap: 4px;
   padding: 5px 4px 5px;
@@ -362,7 +361,7 @@ nav, .nav {
 .fab {
   position: fixed;
   bottom: 20px; right: 50%;
-  transform: translateX(calc(50% + 168px)); /* alineado a la derecha del contenedor */
+  transform: translateX(calc(50% + 168px));
   width: 52px; height: 52px;
   background: var(--azul);
   border-radius: 15px;
@@ -434,7 +433,6 @@ nav, .nav {
   min-height: 44px;
 }
 .fsel:focus { border-color: var(--azul); box-shadow: 0 0 0 3px rgba(37,99,235,.1); }
-/* Wrapper para fsel — garantiza que la flecha custom se ve en Samsung Internet */
 .fsel-wrap { position: relative; }
 .fsel-wrap .fsel { width: 100%; }
 .fsel-wrap::after {
@@ -442,7 +440,6 @@ nav, .nav {
   position: absolute; right: 13px; top: 50%; transform: translateY(-50%);
   font-size: 10px; color: #2563eb; pointer-events: none; font-weight: 900;
 }
-/* Cuando nselInit convierte el select, el fsel queda display:none → ocultar la flecha CSS */
 .fsel-wrap:has(.nsel-wrap)::after { display: none; }
 
 .sheet-btns { display: flex; gap: 7px; margin-top: 5px; }
