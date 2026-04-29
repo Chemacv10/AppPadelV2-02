@@ -59,14 +59,14 @@ function renderNav(moduloActivo) {
           const activa = i === idxAbierto;
           const col = COLORES[c.color];
           return `<button class="nav-tab${activa ? ' nav-tab-active' : ''}"
-            style="border-left-color:${col.color};${activa ? `background:${col.soft};border-top-color:${col.borde};border-right-color:${col.borde};` : ''}text-align:left;width:100%;font-family:Nunito,sans-serif;"
+            style="border-left-color:${col.color};${activa ? `background:${col.soft};border-color:${col.borde};border-bottom-color:${col.soft};` : ''}text-align:left;width:100%;font-family:Nunito,sans-serif;"
             onclick="navSelTab(${i})">
             <div class="nav-tab-title" style="${activa ? `color:${col.color}` : ''}">${c.label}</div>
             ${c.sub ? `<div class="nav-tab-sub">${c.sub}</div>` : ''}
           </button>`;
         }).join('')}
       </div>
-      <div class="nav-panel-wrap" style="border-color:${colActiva.borde};background:${colActiva.soft};border-radius:${panelRadius}">
+      <div class="nav-panel-wrap" style="border-color:${colActiva.borde};background:${colActiva.soft};border-radius:${panelRadius};border-top:none;">
         <div style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:6px">
           ${cActiva.modulos.map(m => `
             <a class="nav-item${m.id === moduloActivo ? ' active' : ''}" href="${m.href}">
