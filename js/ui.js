@@ -46,11 +46,12 @@ function renderNav(moduloActivo) {
              : 4;
 
   // Posición: si es la primera pestaña, esquina sup-izq del panel es plana
+  // Esquina sup-izq recta si pestaña 0, sup-der recta si última pestaña, ambas rectas si es la del medio
   const panelRadius = idxAbierto === 0
     ? '0 12px 12px 12px'
     : idxAbierto === NAV_CARPETAS.length - 1
       ? '12px 0 12px 12px'
-      : '12px';
+      : '0 0 12px 12px';
 
   el.innerHTML = `
     <div class="nav-wrap">
@@ -59,14 +60,14 @@ function renderNav(moduloActivo) {
           const activa = i === idxAbierto;
           const col = COLORES[c.color];
           return `<button class="nav-tab${activa ? ' nav-tab-active' : ''}"
-            style="border-left-color:${col.color};${activa ? `background:${col.soft};border-color:${col.borde};border-bottom-color:${col.soft};` : ''}text-align:left;width:100%;font-family:Nunito,sans-serif;"
+            style="border-left-color:${col.color};${activa ? `background:${col.soft};border-top-color:${col.borde};border-right-color:${col.borde};border-bottom-color:${col.soft};` : ''}text-align:left;width:100%;font-family:Nunito,sans-serif;"
             onclick="navSelTab(${i})">
             <div class="nav-tab-title" style="${activa ? `color:${col.color}` : ''}">${c.label}</div>
             ${c.sub ? `<div class="nav-tab-sub">${c.sub}</div>` : ''}
           </button>`;
         }).join('')}
       </div>
-      <div class="nav-panel-wrap" style="border-color:${colActiva.borde};background:${colActiva.soft};border-radius:${panelRadius};border-top:none;">
+      <div class="nav-panel-wrap" style="border-color:${colActiva.borde};background:${colActiva.soft};border-radius:${panelRadius};border-top-color:${colActiva.soft};">
         <div style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:6px">
           ${cActiva.modulos.map(m => `
             <a class="nav-item${m.id === moduloActivo ? ' active' : ''}" href="${m.href}">
