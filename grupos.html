@@ -68,7 +68,7 @@
     }
     .hpick-btn {
       background:none; border:none; color:var(--azul);
-      font-size:20px; font-weight:900; padding:0 12px; height:38px;
+      font-size:20px; font-weight:900; padding:0 8px; height:38px;
       cursor:pointer; font-family:inherit; flex-shrink:0;
       -webkit-tap-highlight-color:transparent;
     }
@@ -161,27 +161,28 @@
         <input class="finp" id="gr-nombre" placeholder="Ej: Lunes y Miércoles 17h">
       </div>
 
-      <div class="frow" style="grid-template-columns: 1fr 2fr">
+      <div class="frow">
         <div class="fgrp">
           <div class="flbl">Nivel</div>
           <div class="csel-wrap" id="gr-nivel-csel"></div>
         </div>
-        <div class="fgrp">
-          <div class="flbl">Días</div>
-          <div class="dias-grid" id="gr-dias-grid">
-            <div class="dia-chip" data-dia="Lun" onclick="toggleDia(this)">Lun</div>
-            <div class="dia-chip" data-dia="Mar" onclick="toggleDia(this)">Mar</div>
-            <div class="dia-chip" data-dia="Mié" onclick="toggleDia(this)">Mié</div>
-            <div class="dia-chip" data-dia="Jue" onclick="toggleDia(this)">Jue</div>
-            <div class="dia-chip" data-dia="Vie" onclick="toggleDia(this)">Vie</div>
-            <div class="dia-chip" data-dia="Sáb" onclick="toggleDia(this)">Sáb</div>
-            <div class="dia-chip" data-dia="Dom" onclick="toggleDia(this)">Dom</div>
-          </div>
+        <div class="fgrp" style="visibility:hidden"></div>
+      </div>
+      <div class="fgrp">
+        <div class="flbl">Días</div>
+        <div class="dias-grid" id="gr-dias-grid">
+          <div class="dia-chip" data-dia="Lun" onclick="toggleDia(this)">Lun</div>
+          <div class="dia-chip" data-dia="Mar" onclick="toggleDia(this)">Mar</div>
+          <div class="dia-chip" data-dia="Mié" onclick="toggleDia(this)">Mié</div>
+          <div class="dia-chip" data-dia="Jue" onclick="toggleDia(this)">Jue</div>
+          <div class="dia-chip" data-dia="Vie" onclick="toggleDia(this)">Vie</div>
+          <div class="dia-chip" data-dia="Sáb" onclick="toggleDia(this)">Sáb</div>
+          <div class="dia-chip" data-dia="Dom" onclick="toggleDia(this)">Dom</div>
         </div>
       </div>
 
       <!-- Hora inicio + Duración -->
-      <div class="frow" style="grid-template-columns: 3fr 2fr">
+      <div class="frow" style="grid-template-columns: 3fr 2fr; gap:6px">
         <div class="fgrp">
           <div class="flbl">Hora inicio</div>
           <div class="hpick-row">
